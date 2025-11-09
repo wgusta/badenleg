@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>badenleg.ch - Energie-Partner finden</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Verhindert Scrollen der Seite */
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+            z-index: 10;
+        }
+        /* Style für das Overlay-Panel (Mobile-First) */
+        #control-panel {
+            position: absolute;
+            top: 10px;    /* Näher am Rand auf Mobilgeräten */
+            left: 10px;
+            right: 10px;
+            z-index: 20;
+            background: white;
+            padding: 1rem; /* Weniger Padding auf Mobilgeräten */
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: auto;  /* Automatische Breite */
+            max-width: 500px; /* Maximale Breite für Desktop */
+            
+            /* Zentrierung auf Desktop (sm: Breakpoint) */
+            @media (min-width: 640px) {
+                left: 50%;
+                transform: translateX(-50%);
+                width: 90%;
+                padding: 1.5rem;
+                top: 20px;
+            }
+        }
+        /* Farben */
+        :root {
+            --brand-color: #007a5e; /* badenleg.ch Grün */
+            --warn-color: #f59e0b;  /* Orange für "Pool" */
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--brand-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div id="map"></div>
+
+    <div id="control-panel">
+
+        <div class="text-center mb-4">
+            <h1 class="text-3xl font-bold text-gray-800">badenleg<span style="color: var(--brand-color);">.ch</span></h1>
+            <p class="text-md sm:text-lg text-gray-600 mt-1">Ihr Energie-Matchmaker für Baden & Limmattal</p>
+        </div>
+
+        <div id="check-step">
+            <p class="text-gray-600 mb-4 text-center text-sm sm:text-base">Geben Sie Ihre Adresse ein, um passende Energie-Partner in der Nachbarschaft zu finden.</p>
+            
+            <div class="flex flex-col sm:flex-row gap-2">
+                <input type="text" id="address-input" placeholder="z.B. Stadtturm, 5400 Baden" class="flex-grow p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600">
+                <button id="check-button" class="bg-green-700 text-white font-bold py-3 px-4 rounded-md hover:bg-green-800 transition duration-300" style="background-color: var(--brand-color);">
+                    Prüfen
+                </button>
+            </div>
+            <div id="check-loader" class="loader mx-auto my-4 hidden"></div>
+            <p id="check-message" class="text-center text-red-600 mt-4 font-medium"></p>
+        </div>
+
+        <div id="result-step" class="hidden">
+            
+            <div id="no-match-box" class="hidden">
+                <h2 class="text-2xl font-semibold text-yellow-600 mb-4" style="color: var(--warn-color);">Kein direktes Match</h2>
+                <p class="text-gray-600 mb-4 text-sm sm:text-base">Leider gibt es noch keine Partner in Ihrer Zone. Werden Sie der Erste!</p>
+                <p class="text-gray-600 mb-4 text-sm sm:text-base">Tragen Sie sich **anonym** in den Interessen-Pool ein. Wir benachrichtigen Sie per **SMS**, sobald ein passender Nachbar Interesse zeigt.</p>
+                
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="tel" id="phone-input" placeholder="Mobile-Nummer (z.B. +4179...)" class="flex-grow p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-600">
+                    <button id="register-anon-button" class="bg-yellow-600 text-white font-bold py-3 px-4 rounded-md hover:bg-yellow-700 transition duration-300" style="background-color: var(--warn-color);">
+                        In Pool eintragen
+                    </button>
+                </div>
+            </div>
+
+            <div id="match-box" class="hidden">
+                <h2 class="text-2xl font-semibold text-green-700 mb-4" style="color: var(--brand-color);">Potenzial gefunden!</h2>
+                <p id="match-message" class="text-gray-600 mb-4"></p>
+                <p class="text-gray-600 mb-4 text-sm sm:text-base">Vervollständigen Sie Ihre Registrierung. Wir benachrichtigen die Partner (ggf. per SMS), um das Match zu bestätigen.</p>
+                
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="email" id="email-input" placeholder="Ihre E-Mail-Adresse" class="flex-grow p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600">
+                    <button id="register-full-button" class="bg-green-700 text-white font-bold py-3 px-4 rounded-md hover:bg-green-800 transition duration-300" style="background-color: var(--brand-color);">
+                        Registrieren & Matchen
+                    </button>
+                </div>
+            </div>
+
+            <div id="register-loader" class="loader mx-auto my-4 hidden"></div>
+            <p id="register-message" class="text-center text-blue-600 mt-4 font-medium"></p>
+        </div>
+
+        <div id="success-step" class="hidden">
+             <h2 class="text-2xl font-semibold text-green-700 mb-4" style="color: var(--brand-color);">Erfolgreich!</h2>
+             <p id="success-message" class="text-gray-600 text-sm sm:text-base"></p>
+        </div>
+        
+        <button id="reset-button" class="text-center text-gray-500 text-sm mt-4 w-full hidden hover:text-gray-700">Neue Adresse prüfen</button>
+    </div>
+
+
+
+    <script>
+        // --- Globaler State ---
+        let userProfileSummary = null;
+        let map;
+        let userMarker;
+        let clusterMarkers = L.layerGroup(); // Layer für Cluster-Pins
+        let existingMarkers = L.layerGroup(); // Layer für bestehende Nutzer
+
+        // --- UI-Elemente ---
+        const controlPanel = document.getElementById('control-panel');
+        const checkStep = document.getElementById('check-step');
+        const resultStep = document.getElementById('result-step');
+        const successStep = document.getElementById('success-step');
+        const successMessage = document.getElementById('success-message');
+        const resetButton = document.getElementById('reset-button');
+        
+        const checkButton = document.getElementById('check-button');
+        const checkLoader = document.getElementById('check-loader');
+        const checkMessage = document.getElementById('check-message');
+        const addressInput = document.getElementById('address-input');
+
+        const noMatchBox = document.getElementById('no-match-box');
+        const matchBox = document.getElementById('match-box');
+        const matchMessage = document.getElementById('match-message');
+        
+        const registerAnonButton = document.getElementById('register-anon-button');
+        const phoneInput = document.getElementById('phone-input');
+        
+        const registerFullButton = document.getElementById('register-full-button');
+        const emailInput = document.getElementById('email-input');
+
+        const registerLoader = document.getElementById('register-loader');
+        const registerMessage = document.getElementById('register-message');
+        
+        // --- Custom Icons ---
+        const userIcon = L.icon({
+            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+            iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        });
+        const clusterIcon = L.icon({
+            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwN2E1ZSIgd2lkdGg9IjMwcHgiIGhlaWdodD0iMzBweCI+PHBhdGggZD0iTTEyIDJDOC4xMyAyIDUgNS4xMyA1IDljMCA1LjI1IDcuNDIgMTUgNyAxNWw3LTE1YzAtMy44Ny0zLjEzLTctNy03em0wIDkuNWMtMS4xMiAwLTIuNS0xLjEyLTIuNS0yLjVzMS4xMi0yLjUgMi41LTIuNSAyLjUgMS4xMiAyLjUgMi41LTEuMTIgMi41LTIuNSAyLjV6Ii8+PC9zdmc+',
+            iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -28]
+        });
+        const existingIcon = L.divIcon({
+            className: 'existing-dot',
+            html: '<div style="background-color: #9CA3AF; width: 8px; height: 8px; border-radius: 50%; border: 1px solid #4B5563;"></div>',
+            iconSize: [8, 8], iconAnchor: [4, 4]
+        });
+
+
+
+        // --- 1. Initialisierung ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            // Lade Marker verzögert (Staged Loading)
+            setTimeout(loadInitialData, 500); 
+            
+            checkButton.addEventListener('click', handleAddressSubmit);
+            registerAnonButton.addEventListener('click', handleRegisterAnonymous);
+            registerFullButton.addEventListener('click', handleRegisterFull);
+            resetButton.addEventListener('click', () => resetUI(true)); // Voller Reset
+        });
+
+        function initMap() {
+            map = L.map('map', {
+                zoomControl: false // Deaktiviert +/-, da Mobile oft Pinch-Zoom nutzt
+            }).setView([47.473, 8.308], 14); // Zentrum Baden
+            
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CARTO',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(map);
+            
+            clusterMarkers.addTo(map);
+            existingMarkers.addTo(map);
+        }
+
+        async function loadInitialData() {
+            try {
+                const response = await fetch('/api/get_all_buildings');
+                const data = await response.json();
+                
+                existingMarkers.clearLayers();
+                data.buildings.forEach(b => {
+                    if (b.type === 'anonymous' || b.type === 'registered') {
+                        L.marker([b.lat, b.lon], { 
+                            icon: existingIcon, 
+                            zIndexOffset: -100, 
+                            interactive: false, // Macht die Punkte nicht klickbar
+                            opacity: 0.7 
+                        }).addTo(existingMarkers);
+                    }
+                });
+            } catch (err) {
+                console.warn("Konnte initiale Daten nicht laden:", err);
+            }
+        }
+        
+        // --- 2. Adress-Prüfung ---
+        async function handleAddressSubmit() {
+            const address = addressInput.value;
+            if (!address) {
+                checkMessage.textContent = "Bitte geben Sie eine Adresse ein.";
+                return;
+            }
+
+            // UI-Steuerung
+            uiStartLoading(checkButton, checkLoader, checkMessage);
+            resetUI(false); // Nur Marker löschen, nicht das Panel
+
+            try {
+                const response = await fetch('/api/check_potential', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address: address })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Ein Fehler ist aufgetreten.");
+                }
+
+                userProfileSummary = data.profile_summary;
+                
+                // Karte aktualisieren
+                drawUserPin(userProfileSummary.lat, userProfileSummary.lon, userProfileSummary.address);
+                map.flyTo([userProfileSummary.lat, userProfileSummary.lon], 17); // Zoom auf Adresse
+
+                // UI aktualisieren
+                checkStep.classList.add('hidden'); // Verstecke Schritt 1
+                resultStep.classList.remove('hidden');
+                resetButton.classList.remove('hidden'); // NEU: Reset-Knopf anzeigen
+
+                if (data.potential) {
+                    // Szenario B: Match gefunden
+                    matchBox.classList.remove('hidden');
+                    noMatchBox.classList.add('hidden');
+                    matchMessage.innerHTML = `Grossartig! Unser System hat <b>${data.cluster_info.num_members - 1} Partner</b> identifiziert. <br>Potenzielle Autarkie: <b>${data.cluster_info.autarky_percent.toFixed(1)}%</b>.`;
+                    
+                    // Zeichne den Cluster
+                    drawCluster(data.cluster_info.members);
+                } else {
+                    // Szenario A: Kein Match
+                    matchBox.classList.add('hidden');
+                    noMatchBox.classList.remove('hidden');
+                }
+
+            } catch (err) {
+                checkMessage.textContent = err.message;
+            } finally {
+                uiStopLoading(checkButton, checkLoader);
+            }
+        }
+
+        // --- 3. Registrierungs-Flows ---
+        async function handleRegisterAnonymous() {
+            const phone = phoneInput.value;
+            if (!phone) {
+                registerMessage.textContent = "Bitte geben Sie eine Telefonnummer ein.";
+                return;
+            }
+            uiStartLoading(registerAnonButton, registerLoader, registerMessage);
+            
+            try {
+                const response = await fetch('/api/register_anonymous', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: phone, profile: userProfileSummary })
+                });
+                const data = await response.json(); // Bekommt alle Gebäude zurück
+                if (!response.ok) throw new Error("Fehler bei der Registrierung.");
+
+                // UI-Abschluss
+                resultStep.classList.add('hidden');
+                successStep.classList.remove('hidden');
+                successMessage.textContent = "Erfolgreich im Pool eingetragen! Wir benachrichtigen Sie per SMS, sobald sich ein Partner findet.";
+                
+                // Karte mit neuem Punkt aktualisieren
+                drawUserPin(userProfileSummary.lat, userProfileSummary.lon, userProfileSummary.address, 'anonymous');
+                // Lade alle anderen Marker neu
+                updateExistingMarkers(data.buildings);
+                
+            } catch (err) {
+                registerMessage.textContent = err.message;
+                uiStopLoading(registerAnonButton, registerLoader);
+            }
+        }
+
+        async function handleRegisterFull() {
+            const email = emailInput.value;
+            if (!email) {
+                registerMessage.textContent = "Bitte geben Sie eine E-Mail ein.";
+                return;
+            }
+            uiStartLoading(registerFullButton, registerLoader, registerMessage);
+
+            try {
+                const response = await fetch('/api/register_full', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, profile: userProfileSummary })
+                });
+                const data = await response.json(); // Bekommt alle Gebäude zurück
+                if (!response.ok) throw new Error("Fehler bei der Registrierung.");
+                
+                // UI-Abschluss
+                resultStep.classList.add('hidden');
+                successStep.classList.remove('hidden');
+                successMessage.textContent = "Registrierung erfolgreich! Wir haben Ihre Partner benachrichtigt und melden uns in Kürze per E-Mail.";
+
+                // Karte mit neuem Punkt aktualisieren (als "registriert")
+                drawUserPin(userProfileSummary.lat, userProfileSummary.lon, userProfileSummary.address, 'registered');
+                // Lade alle anderen Marker neu
+                updateExistingMarkers(data.buildings);
+
+            } catch (err) {
+                registerMessage.textContent = err.message;
+                uiStopLoading(registerFullButton, registerLoader);
+            }
+        }
+        
+        // --- NEUE HILFSFUNKTION ---
+        function updateExistingMarkers(buildings) {
+             existingMarkers.clearLayers();
+             buildings.forEach(b => {
+                // Zeichne nicht den aktuellen Nutzer, der hat seinen eigenen Marker
+                if (userProfileSummary && b.lat === userProfileSummary.lat && b.lon === userProfileSummary.lon) {
+                    return; 
+                }
+                if (b.type === 'anonymous' || b.type === 'registered') {
+                    L.marker([b.lat, b.lon], { icon: existingIcon, zIndexOffset: -100, interactive: false }).addTo(existingMarkers);
+                }
+            });
+        }
+
+        // --- Karten-Hilfsfunktionen ---
+        function drawUserPin(lat, lon, address, type = 'user') {
+            if (userMarker) {
+                map.removeLayer(userMarker);
+            }
+            let icon = userIcon;
+            if (type === 'anonymous') icon = existingIcon;
+            // Zeige registrierte Nutzer als Cluster-Pin, da sie jetzt "aktiv" sind
+            if (type === 'registered') icon = clusterIcon; 
+            
+            userMarker = L.marker([lat, lon], { icon: icon, zIndexOffset: 1000 }) // Immer im Vordergrund
+                .addTo(map)
+                .bindPopup(`<b>Ihr Standort</b><br>${address}`)
+                .openPopup();
+        }
+
+        function drawCluster(members) {
+            clusterMarkers.clearLayers();
+            const latLngs = [];
+            
+            members.forEach(member => {
+                // Zeichne nicht den Nutzer selbst, der hat schon einen Pin
+                if (userProfileSummary && member.building_id === userProfileSummary.building_id) return;
+
+                L.marker([member.lat, member.lon], { icon: clusterIcon })
+                    .addTo(clusterMarkers)
+                    .bindPopup(`<b>Potenzieller Partner</b><br>(ID: ...${member.building_id.slice(-4)})`);
+                
+                latLngs.push([member.lat, member.lon]);
+            });
+
+            // Füge den Nutzer selbst zur Linie hinzu
+            if (userProfileSummary) {
+                latLngs.push([userProfileSummary.lat, userProfileSummary.lon]);
+            }
+            
+            // Zeichne eine Linie, die das Cluster verbindet
+            if (latLngs.length > 1) {
+                L.polyline(latLngs, { color: 'var(--brand-color)', weight: 2, opacity: 0.7, dashArray: '5, 5' }).addTo(clusterMarkers);
+            }
+        }
+
+        // --- UI-Hilfsfunktionen ---
+        function uiStartLoading(button, loader, messageElement) {
+            button.disabled = true;
+            button.style.opacity = '0.5';
+            loader.classList.remove('hidden');
+            messageElement.textContent = "";
+        }
+
+        function uiStopLoading(button, loader) {
+            button.disabled = false;
+            button.style.opacity = '1';
+            loader.classList.add('hidden');
+        }
+
+        function resetUI(fullReset = true) {
+            // Setzt die UI zurück, falls der Nutzer eine neue Adresse eingibt
+            clusterMarkers.clearLayers();
+            if(userMarker) {
+                map.removeLayer(userMarker);
+                userMarker = null;
+            }
+            
+            if (fullReset) { // Nur Panel zurücksetzen, wenn "Neue Suche" geklickt wird
+                resultStep.classList.add('hidden');
+                successStep.classList.add('hidden');
+                checkStep.classList.remove('hidden');
+                resetButton.classList.add('hidden');
+                addressInput.value = "";
+                // Zoom zurück auf Baden
+                map.flyTo([47.473, 8.308], 14);
+            }
+            
+            checkMessage.textContent = "";
+            registerMessage.textContent = "";
+        }
+
+    </script>
+</body>
+</html>
+
