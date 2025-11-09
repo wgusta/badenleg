@@ -25,8 +25,11 @@ def generate_mock_profiles(annual_consumption_kwh, potential_pv_kwp, num_interva
     """Generiert vereinfachte 15-Minuten-Zeitreihenprofile."""
     timestamps = pd.date_range(start='2025-01-01', periods=num_intervals, freq='15min')
     
-    time_of_day = timestamps.hour + timestamps.minute / 60
+    # Konvertiere zu numpy arrays, um Index-Probleme zu vermeiden
+    time_of_day = np.array(timestamps.hour) + np.array(timestamps.minute) / 60.0
     consumption_shape = np.cos((time_of_day - 13.5) * (np.pi / 12))**2
+    # Stelle sicher, dass consumption_shape ein numpy array ist
+    consumption_shape = np.array(consumption_shape)
     consumption_shape[ (time_of_day < 6) | (time_of_day > 22) ] *= 0.5
     
     # Verhindere Division durch Null, wenn Summe 0 ist
@@ -37,10 +40,16 @@ def generate_mock_profiles(annual_consumption_kwh, potential_pv_kwp, num_interva
         
     consumption_profile_kw = normalized_consumption * (annual_consumption_kwh / 0.25)
     
-    day_of_year = timestamps.dayofyear
+    # Konvertiere day_of_year zu numpy array
+    day_of_year = np.array(timestamps.dayofyear)
     seasonal_factor = 1 + 0.5 * np.cos((day_of_year - 172) * (2 * np.pi / 365))
-    pv_shape = np.sin(np.maximum(0, (time_of_day - 6) * (np.pi / 12)))**1.5
-    pv_shape = pv_shape * seasonal_factor
+    # Berechne pv_shape mit numpy, um Index-Probleme zu vermeiden
+    pv_time_factor = np.maximum(0, (time_of_day - 6) * (np.pi / 12))
+    pv_sin = np.sin(pv_time_factor)
+    # Verwende np.power statt ** um Warnungen zu vermeiden
+    pv_shape = np.power(np.where(pv_sin > 0, pv_sin, 0), 1.5)
+    # Stelle sicher, dass pv_shape ein numpy array ist
+    pv_shape = np.array(pv_shape) * np.array(seasonal_factor)
     
     if pv_shape.max() > 0:
         normalized_pv = pv_shape / pv_shape.max()
@@ -83,14 +92,21 @@ def calculate_community_autarky(community_buildings_df, all_profiles):
          return 0.0, 0, 0
 
     # Holen Sie sich einen gültigen Index aus dem ersten Profil
-    sim_index = all_profiles_sim[first_building_id].index
+    # Verwende .values um nur die Werte zu verwenden, nicht den DatetimeIndex
+    first_profile = all_profiles_sim[first_building_id]
+    num_points = len(first_profile)
     
-    community_consumption = pd.Series(0.0, index=sim_index)
-    community_production = pd.Series(0.0, index=sim_index)
+    # Erstelle Series mit numerischem Index statt DatetimeIndex
+    # Dies vermeidet "Index does not support mutable operations" Fehler
+    community_consumption = pd.Series(0.0, index=range(num_points))
+    community_production = pd.Series(0.0, index=range(num_points))
     
-    for building_id in community_buildings_df['building_id']:
-        community_consumption += all_profiles_sim[building_id]['consumption_kw']
-        community_production += all_profiles_sim[building_id]['production_kw']
+    # Verwende .values um sicherzustellen, dass wir über die Werte iterieren, nicht den Index
+    for building_id in community_buildings_df['building_id'].values:
+        profile = all_profiles_sim[building_id]
+        # Verwende .values um nur die numerischen Werte zu bekommen
+        community_consumption += pd.Series(profile['consumption_kw'].values, index=range(num_points))
+        community_production += pd.Series(profile['production_kw'].values, index=range(num_points))
         
     net_load_kw = community_consumption - community_production
     energy_kwh = net_load_kw * 0.25
@@ -141,12 +157,19 @@ def find_optimal_communities(building_data_df, radius_meters=150, min_community_
     if building_data_df.empty or len(building_data_df) < min_community_size:
         print(f"[ML] Zu wenig Daten für Clustering (min. {min_community_size} benötigt, {len(building_data_df)} vorhanden).")
         if not building_data_df.empty:
-             building_data_df['cluster'] = -1
+            # Erstelle einen neuen DataFrame, um Index-Probleme zu vermeiden
+            result_df = pd.DataFrame(building_data_df.to_dict('records'))
+            result_df['cluster'] = -1
+            return [], result_df
         return [], building_data_df
         
     print(f"[ML] Starte ML-Clustering (DBSCAN) für {len(building_data_df)} Gebäude...")
     
-    coords = building_data_df[['lat', 'lon']].values
+    # Erstelle einen komplett neuen DataFrame, um Index-Probleme zu vermeiden
+    # Dies stellt sicher, dass wir einen normalen numerischen Index haben
+    working_df = pd.DataFrame(building_data_df.to_dict('records'))
+    
+    coords = working_df[['lat', 'lon']].values
     coords_rad = np.radians(coords)
     
     earth_radius_m = 6371e3
@@ -155,7 +178,7 @@ def find_optimal_communities(building_data_df, radius_meters=150, min_community_
     # Führe DBSCAN mit Haversine-Distanz (echte Erddistanz) aus
     db = DBSCAN(eps=eps_rad, min_samples=min_community_size, algorithm='ball_tree', metric='haversine').fit(coords_rad)
     
-    building_data_df['cluster'] = db.labels_
+    working_df['cluster'] = db.labels_
     
     num_clusters = len(set(db.labels_)) - (1 if -1 in db.labels_ else 0)
     print(f"[ML] DBSCAN fand {num_clusters} potenzielle Gemeinschaften.")
@@ -165,7 +188,9 @@ def find_optimal_communities(building_data_df, radius_meters=150, min_community_
     for cluster_id in set(db.labels_):
         if cluster_id == -1: continue # Rauscht-Cluster (isolierte Gebäude)
             
-        community_buildings_df = building_data_df[building_data_df['cluster'] == cluster_id]
+        # Erstelle einen neuen DataFrame statt copy(), um Index-Probleme zu vermeiden
+        cluster_mask = working_df['cluster'] == cluster_id
+        community_buildings_df = pd.DataFrame(working_df[cluster_mask].to_dict('records'))
         
         # Ruft die aktualisierte Funktion auf
         cluster_info = get_cluster_info(community_buildings_df, cluster_id)
@@ -174,7 +199,19 @@ def find_optimal_communities(building_data_df, radius_meters=150, min_community_
     # Sortiere nach höchster Autarkie
     ranked_results = sorted(results, key=lambda x: x['autarky_percent'], reverse=True)
     
-    return ranked_results, building_data_df
+    # Stelle sicher, dass building_id im Ergebnis-DataFrame erhalten bleibt
+    # Verwende working_df, aber stelle sicher, dass alle ursprünglichen Spalten vorhanden sind
+    result_df = working_df.copy()
+    
+    # Wenn building_id nicht im working_df ist, aber im ursprünglichen DataFrame war,
+    # müssen wir es wieder hinzufügen
+    if 'building_id' not in result_df.columns and 'building_id' in building_data_df.columns:
+        # Versuche building_id basierend auf den anderen Spalten zu matchen
+        building_data_df_reset = building_data_df.reset_index(drop=True)
+        if len(result_df) == len(building_data_df_reset):
+            result_df['building_id'] = building_data_df_reset['building_id'].values
+    
+    return ranked_results, result_df
 
 
 if __name__ == "__main__":

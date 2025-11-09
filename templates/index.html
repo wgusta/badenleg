@@ -21,32 +21,70 @@
             overflow: hidden; /* Verhindert Scrollen der Seite */
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
+        
+        /* Desktop Layout: Flexbox für Side-by-Side */
+        @media (min-width: 1024px) {
+            body {
+                display: flex;
+                flex-direction: row;
+            }
+        }
+        
         #map {
-            height: 100%;
+            height: 100vh;
             width: 100%;
             z-index: 10;
         }
-        /* Style für das Overlay-Panel (Mobile-First) */
+        
+        /* Desktop: Karte nimmt linke Seite ein */
+        @media (min-width: 1024px) {
+            #map {
+                width: calc(100% - 450px);
+            }
+        }
+        
+        /* Style für das Control-Panel (Mobile-First) */
         #control-panel {
             position: absolute;
-            top: 10px;    /* Näher am Rand auf Mobilgeräten */
+            top: 10px;
             left: 10px;
             right: 10px;
             z-index: 20;
             background: white;
-            padding: 1rem; /* Weniger Padding auf Mobilgeräten */
+            padding: 1rem;
             border-radius: 0.5rem;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            width: auto;  /* Automatische Breite */
-            max-width: 500px; /* Maximale Breite für Desktop */
+            width: auto;
+            max-width: 500px;
+            max-height: calc(100vh - 20px);
+            overflow-y: auto;
             
-            /* Zentrierung auf Desktop (sm: Breakpoint) */
-            @media (min-width: 640px) {
+            /* Tablet: Zentriert */
+            @media (min-width: 640px) and (max-width: 1023px) {
                 left: 50%;
                 transform: translateX(-50%);
                 width: 90%;
+                max-width: 600px;
                 padding: 1.5rem;
                 top: 20px;
+            }
+            
+            /* Desktop: Rechte Sidebar, sticky, volle Höhe */
+            @media (min-width: 1024px) {
+                position: fixed;
+                top: 0;
+                right: 0;
+                left: auto;
+                width: 450px;
+                min-width: 350px;
+                max-width: 450px;
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+                box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+                padding: 2rem;
+                transform: none;
+                z-index: 1000; /* Sehr hoch, damit Sidebar über allem liegt */
             }
         }
         /* Farben */
@@ -66,6 +104,75 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* Adressvorschläge Dropdown */
+        #address-suggestions {
+            z-index: 1000;
+            top: 100%;
+            left: 0;
+            right: 0;
+        }
+        .suggestion-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #e5e7eb;
+            transition: background-color 0.15s;
+            font-size: 0.95rem;
+        }
+        .suggestion-item:hover,
+        .suggestion-item.active {
+            background-color: #d1fae5;
+        }
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        /* Cluster-Polygon Styles */
+        .cluster-polygon-clickable {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .cluster-popup {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        .cluster-popup h3 {
+            font-size: 1.1em;
+        }
+        .cluster-popup details summary {
+            user-select: none;
+        }
+        
+        /* Desktop: Verbesserte Sidebar-Scrollbarkeit */
+        @media (min-width: 1024px) {
+            #control-panel {
+                scrollbar-width: thin;
+                scrollbar-color: #cbd5e1 #f1f5f9;
+            }
+            
+            #control-panel::-webkit-scrollbar {
+                width: 8px;
+            }
+            
+            #control-panel::-webkit-scrollbar-track {
+                background: #f1f5f9;
+            }
+            
+            #control-panel::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 4px;
+            }
+            
+            #control-panel::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+            
+            /* Größere Schrift auf Desktop */
+            #control-panel h1 {
+                font-size: 2.5rem;
+            }
+            
+            #control-panel p {
+                font-size: 1rem;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -83,8 +190,11 @@
             <p class="text-gray-600 mb-4 text-center text-sm sm:text-base">Geben Sie Ihre Adresse ein, um passende Energie-Partner in der Nachbarschaft zu finden.</p>
             
             <div class="flex flex-col sm:flex-row gap-2">
-                <input type="text" id="address-input" placeholder="z.B. Stadtturm, 5400 Baden" class="flex-grow p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600">
-                <button id="check-button" class="bg-green-700 text-white font-bold py-3 px-4 rounded-md hover:bg-green-800 transition duration-300" style="background-color: var(--brand-color);">
+                <div class="flex-grow relative">
+                    <input type="text" id="address-input" placeholder="z.B. Rathausgasse 20, Baden" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600" autocomplete="off" required>
+                    <div id="address-suggestions" class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-60 overflow-y-auto"></div>
+                </div>
+                <button type="button" id="check-button" class="bg-green-700 text-white font-bold py-3 px-4 rounded-md hover:bg-green-800 transition duration-300" style="background-color: var(--brand-color);">
                     Prüfen
                 </button>
             </div>
@@ -141,6 +251,7 @@
         let userMarker;
         let clusterMarkers = L.layerGroup(); // Layer für Cluster-Pins
         let existingMarkers = L.layerGroup(); // Layer für bestehende Nutzer
+        let clusterPolygons = null; // Wird in initMap() initialisiert
 
         // --- UI-Elemente ---
         const controlPanel = document.getElementById('control-panel');
@@ -154,6 +265,12 @@
         const checkLoader = document.getElementById('check-loader');
         const checkMessage = document.getElementById('check-message');
         const addressInput = document.getElementById('address-input');
+        const addressSuggestions = document.getElementById('address-suggestions');
+        
+        let suggestionTimeout = null;
+        let currentSuggestions = [];
+        let selectedSuggestionIndex = -1;
+        let clusterPolygons = null; // Wird in initMap() initialisiert
 
         const noMatchBox = document.getElementById('no-match-box');
         const matchBox = document.getElementById('match-box');
@@ -185,24 +302,37 @@
             iconSize: [8, 8], iconAnchor: [4, 4]
         });
 
-
-
         // --- 1. Initialisierung ---
         document.addEventListener('DOMContentLoaded', () => {
             initMap();
-            // Lade Marker verzögert (Staged Loading)
-            setTimeout(loadInitialData, 500); 
+            setTimeout(loadInitialData, 500);
+            
+            // Adress-Autovervollständigung
+            addressInput.addEventListener('input', handleAddressInput);
+            addressInput.addEventListener('keydown', handleAddressKeydown);
+            addressInput.addEventListener('blur', () => {
+                setTimeout(() => {
+                    if (document.activeElement !== addressInput && 
+                        !addressSuggestions.contains(document.activeElement)) {
+                        addressSuggestions.classList.add('hidden');
+                    }
+                }, 250);
+            });
+            
+            addressSuggestions.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+            });
             
             checkButton.addEventListener('click', handleAddressSubmit);
             registerAnonButton.addEventListener('click', handleRegisterAnonymous);
             registerFullButton.addEventListener('click', handleRegisterFull);
-            resetButton.addEventListener('click', () => resetUI(true)); // Voller Reset
+            resetButton.addEventListener('click', () => resetUI(true));
         });
 
         function initMap() {
             map = L.map('map', {
-                zoomControl: false // Deaktiviert +/-, da Mobile oft Pinch-Zoom nutzt
-            }).setView([47.473, 8.308], 14); // Zentrum Baden
+                zoomControl: false
+            }).setView([47.473, 8.308], 14);
             
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; OpenStreetMap &copy; CARTO',
@@ -212,15 +342,18 @@
             
             clusterMarkers.addTo(map);
             existingMarkers.addTo(map);
+            clusterPolygons = L.layerGroup();
+            clusterPolygons.addTo(map);
         }
 
         async function loadInitialData() {
             try {
-                const response = await fetch('/api/get_all_buildings');
-                const data = await response.json();
+                // Lade Gebäude
+                const buildingsResponse = await fetch('/api/get_all_buildings');
+                const buildingsData = await buildingsResponse.json();
                 
                 existingMarkers.clearLayers();
-                data.buildings.forEach(b => {
+                buildingsData.buildings.forEach(b => {
                     if (b.type === 'anonymous' || b.type === 'registered') {
                         L.marker([b.lat, b.lon], { 
                             icon: existingIcon, 
@@ -230,34 +363,286 @@
                         }).addTo(existingMarkers);
                     }
                 });
+                
+                // Lade Cluster (ZEV/LEG) als Polygone
+                try {
+                    const clustersResponse = await fetch('/api/get_all_clusters');
+                    if (clustersResponse.ok) {
+                        const clustersData = await clustersResponse.json();
+                        
+                        if (clusterPolygons) {
+                            clusterPolygons.clearLayers();
+                            clustersData.clusters.forEach(cluster => {
+                                drawClusterPolygon(cluster, clusterPolygons);
+                            });
+                        }
+                        
+                        console.log(`[INIT] ${buildingsData.buildings.length} Gebäude und ${clustersData.clusters.length} Cluster geladen`);
+                    } else {
+                        console.warn("[INIT] Cluster-API antwortete mit Fehler:", clustersResponse.status);
+                    }
+                } catch (clusterErr) {
+                    console.warn("[INIT] Fehler beim Laden der Cluster:", clusterErr);
+                    // Nicht kritisch, Seite sollte trotzdem funktionieren
+                }
             } catch (err) {
-                console.warn("Konnte initiale Daten nicht laden:", err);
+                console.error("Konnte initiale Daten nicht laden:", err);
             }
+        }
+        
+        function drawClusterPolygon(cluster, targetLayerGroup) {
+            if (!targetLayerGroup || !cluster || !cluster.polygon) {
+                console.warn("[CLUSTER] Kann Polygon nicht zeichnen:", cluster);
+                return;
+            }
+            
+            try {
+                // Farben basierend auf Autarkie-Prozent
+                const autarky = cluster.autarky_percent || 0;
+                let color = '#10b981'; // Grün (hohe Autarkie)
+                let fillColor = '#10b981';
+                let fillOpacity = 0.3;
+                
+                if (autarky < 50) {
+                    color = '#f59e0b'; // Orange (mittlere Autarkie)
+                    fillColor = '#f59e0b';
+                } else if (autarky < 70) {
+                    color = '#3b82f6'; // Blau (gute Autarkie)
+                    fillColor = '#3b82f6';
+                }
+                
+                // Konvertiere Polygon-Koordinaten für Leaflet (lat, lon)
+                const polygonCoords = cluster.polygon.map(coord => {
+                    if (Array.isArray(coord) && coord.length >= 2) {
+                        return [coord[0], coord[1]];
+                    }
+                    return null;
+                }).filter(c => c !== null);
+                
+                if (polygonCoords.length < 3) {
+                    console.warn("[CLUSTER] Zu wenige Polygon-Koordinaten:", polygonCoords);
+                    return;
+                }
+                
+                // Erstelle Polygon mit interaktiven Optionen
+                const polygon = L.polygon(polygonCoords, {
+                    color: color,
+                    weight: 3,
+                    fillColor: fillColor,
+                    fillOpacity: fillOpacity,
+                    opacity: 0.8,
+                    interactive: true, // Macht Polygon klickbar
+                    className: 'cluster-polygon-clickable'
+                }).addTo(targetLayerGroup);
+                
+                // Tooltip mit Cluster-Info (beim Hover)
+                const tooltipText = `ZEV/LEG Cluster ${cluster.cluster_id}<br>` +
+                                   `${cluster.num_members} Mitglieder<br>` +
+                                   `Autarkie: ${autarky.toFixed(1)}%<br>` +
+                                   `<small>Klicken für Details</small>`;
+                
+                polygon.bindTooltip(tooltipText, {
+                    permanent: false,
+                    direction: 'center',
+                    className: 'cluster-tooltip'
+                });
+                
+                // Popup mit detaillierten Informationen (beim Klick)
+                const members = cluster.members || [];
+                const membersList = members.length > 0 
+                    ? members.map(m => 
+                        `• Gebäude ${m.building_id ? m.building_id.slice(-6) : 'N/A'} (${m.lat ? m.lat.toFixed(4) : 'N/A'}, ${m.lon ? m.lon.toFixed(4) : 'N/A'})`
+                      ).join('<br>')
+                    : 'Keine Mitglieder';
+                
+                const popupContent = `
+                    <div style="min-width: 250px;">
+                        <h3 style="margin: 0 0 10px 0; color: ${color};">
+                            🏘️ ZEV/LEG Cluster ${cluster.cluster_id}
+                        </h3>
+                        <div style="margin-bottom: 10px;">
+                            <strong>Autarkie:</strong> <span style="color: ${color}; font-size: 1.2em; font-weight: bold;">${autarky.toFixed(1)}%</span>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <strong>Mitglieder:</strong> ${cluster.num_members} Gebäude
+                        </div>
+                        ${members.length > 0 ? `
+                        <details style="margin-top: 10px;">
+                            <summary style="cursor: pointer; color: #666;">Mitglieder anzeigen</summary>
+                            <div style="margin-top: 5px; font-size: 0.9em; color: #666;">
+                                ${membersList}
+                            </div>
+                        </details>
+                        ` : ''}
+                        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #ddd;">
+                            <small style="color: #666;">
+                                💡 Dies ist ein potenzieller Zusammenschluss zum Eigenverbrauch (ZEV) oder eine Lokale Energiegemeinschaft (LEG)
+                            </small>
+                        </div>
+                    </div>
+                `;
+                
+                polygon.bindPopup(popupContent, {
+                    maxWidth: 300,
+                    className: 'cluster-popup'
+                });
+                
+                // Hover-Effekt: Ändere Opacity beim Hover
+                polygon.on('mouseover', function() {
+                    this.setStyle({
+                        fillOpacity: fillOpacity + 0.2,
+                        weight: 4
+                    });
+                });
+                
+                polygon.on('mouseout', function() {
+                    this.setStyle({
+                        fillOpacity: fillOpacity,
+                        weight: 3
+                    });
+                });
+                
+            } catch (err) {
+                console.error("[CLUSTER] Fehler beim Zeichnen des Polygons:", err, cluster);
+            }
+        }
+        
+        // --- Adress-Autovervollständigung ---
+        async function handleAddressInput(e) {
+            const query = e.target.value.trim();
+            selectedSuggestionIndex = -1;
+            
+            // Schließe Dropdown bei leerem Input
+            if (query.length < 2) {
+                addressSuggestions.classList.add('hidden');
+                currentSuggestions = [];
+                return;
+            }
+            
+            // Debounce: Warte 200ms nach letztem Tastendruck (schneller für bessere UX)
+            clearTimeout(suggestionTimeout);
+            suggestionTimeout = setTimeout(async () => {
+                try {
+                    const url = `/api/suggest_addresses?q=${encodeURIComponent(query)}`;
+                    console.log('[AUTOCOMPLETE] Suche nach:', query);
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    currentSuggestions = data.suggestions || [];
+                    console.log('[AUTOCOMPLETE] Gefunden:', currentSuggestions.length, 'Vorschläge');
+                    
+                    // Nur anzeigen, wenn der Input noch der gleiche ist (verhindert Race Conditions)
+                    if (addressInput.value.trim() === query) {
+                        displaySuggestions(currentSuggestions);
+                    }
+                } catch (err) {
+                    console.error("Fehler beim Abrufen von Adressvorschlägen:", err);
+                    addressSuggestions.classList.add('hidden');
+                    currentSuggestions = [];
+                }
+            }, 200);
+        }
+        
+        function displaySuggestions(suggestions) {
+            console.log('[AUTOCOMPLETE] Zeige', suggestions.length, 'Vorschläge');
+            if (suggestions.length === 0) {
+                addressSuggestions.classList.add('hidden');
+                return;
+            }
+            
+            addressSuggestions.innerHTML = '';
+            
+            // Zeige max. 8 Vorschläge für bessere UX
+            const maxSuggestions = Math.min(suggestions.length, 8);
+            
+            for (let i = 0; i < maxSuggestions; i++) {
+                const suggestion = suggestions[i];
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                item.textContent = suggestion.label || 'Unbekannte Adresse';
+                item.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); // Verhindert, dass das Input-Feld den Focus verliert
+                    selectSuggestion(suggestion);
+                });
+                addressSuggestions.appendChild(item);
+            }
+            
+            addressSuggestions.classList.remove('hidden');
+            console.log('[AUTOCOMPLETE] Dropdown angezeigt');
+        }
+        
+        function selectSuggestion(suggestion) {
+            addressInput.value = suggestion.label;
+            addressSuggestions.classList.add('hidden');
+            currentSuggestions = [];
+            selectedSuggestionIndex = -1;
+        }
+        
+        function handleAddressKeydown(e) {
+            if (!addressSuggestions.classList.contains('hidden') && currentSuggestions.length > 0) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, currentSuggestions.length - 1);
+                    updateSuggestionHighlight();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+                    updateSuggestionHighlight();
+                } else if (e.key === 'Enter' && selectedSuggestionIndex >= 0) {
+                    e.preventDefault();
+                    selectSuggestion(currentSuggestions[selectedSuggestionIndex]);
+                } else if (e.key === 'Escape') {
+                    addressSuggestions.classList.add('hidden');
+                }
+            }
+        }
+        
+        function updateSuggestionHighlight() {
+            const items = addressSuggestions.querySelectorAll('.suggestion-item');
+            items.forEach((item, index) => {
+                if (index === selectedSuggestionIndex) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                } else {
+                    item.classList.remove('active');
+                }
+            });
         }
         
         // --- 2. Adress-Prüfung ---
         async function handleAddressSubmit() {
-            const address = addressInput.value;
+            const address = addressInput.value.trim();
             if (!address) {
                 checkMessage.textContent = "Bitte geben Sie eine Adresse ein.";
                 return;
             }
 
+            // Schließe Dropdown
+            addressSuggestions.classList.add('hidden');
+
             // UI-Steuerung
             uiStartLoading(checkButton, checkLoader, checkMessage);
+            checkMessage.textContent = ""; // Lösche vorherige Fehler
             resetUI(false); // Nur Marker löschen, nicht das Panel
 
             try {
+                console.log('[SUBMIT] Sende Adresse:', address);
                 const response = await fetch('/api/check_potential', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ address: address })
                 });
 
+                console.log('[SUBMIT] Response Status:', response.status);
                 const data = await response.json();
+                console.log('[SUBMIT] Response Data:', data);
 
                 if (!response.ok) {
-                    throw new Error(data.error || "Ein Fehler ist aufgetreten.");
+                    const errorMsg = data.error || data.message || "Ein Fehler ist aufgetreten.";
+                    console.error('[SUBMIT] Fehler:', errorMsg);
+                    throw new Error(errorMsg);
                 }
 
                 userProfileSummary = data.profile_summary;
@@ -286,7 +671,10 @@
                 }
 
             } catch (err) {
-                checkMessage.textContent = err.message;
+                console.error('[SUBMIT] Vollständiger Fehler:', err);
+                const errorMessage = err.message || "Ein unerwarteter Fehler ist aufgetreten.";
+                checkMessage.textContent = errorMessage;
+                checkMessage.style.color = '#dc2626'; // Rot
             } finally {
                 uiStopLoading(checkButton, checkLoader);
             }
@@ -436,6 +824,11 @@
                 map.removeLayer(userMarker);
                 userMarker = null;
             }
+            
+            // Schließe Dropdown
+            addressSuggestions.classList.add('hidden');
+            currentSuggestions = [];
+            selectedSuggestionIndex = -1;
             
             if (fullReset) { // Nur Panel zurücksetzen, wenn "Neue Suche" geklickt wird
                 resultStep.classList.add('hidden');

@@ -3,13 +3,14 @@ import pandas as pd
 import numpy as np
 import time
 import hashlib
+import re
 
 # Importiere Profil-Generator aus ml_models
 import ml_models 
 
 # --- API-Endpunkte ---
-GEO_API_URL = "https://api.geo.admin.ch/v1/rest/services/api/SearchServer"
-SOLAR_API_URL = "https://api.geo.admin.ch/v1/rest/services/api/MapServer/ch.bfe.sonnendach"
+GEO_API_URL = "https://api3.geo.admin.ch/rest/services/api/SearchServer"
+SOLAR_API_URL = "https://api3.geo.admin.ch/rest/services/api/MapServer/ch.bfe.sonnendach"
 
 # --- Mock-Funktionen (Simulation von GWR/MOFIS-Datenbanken) ---
 def mock_get_gwr_data(lat, lon, plz):
@@ -25,10 +26,39 @@ def mock_get_plz_stats(plz):
     else: return 5.0, 0.9 # Umland
 
 # --- Echte API-Funktionen (Opendata) ---
+def get_address_suggestions(query_string, limit=10):
+    """Fragt Swisstopo API ab, um Adressvorschläge zu erhalten."""
+    if not query_string or len(query_string) < 2:
+        return []
+    
+    params = {'searchText': query_string, 'type': 'locations', 'limit': limit}
+    try:
+        response = requests.get(GEO_API_URL, params=params, timeout=5)
+        response.raise_for_status()
+        results = response.json().get('results', [])
+        
+        suggestions = []
+        for result in results:
+            attrs = result.get('attrs', {})
+            label = attrs.get('label', '')
+            # Entferne HTML-Tags aus dem Label
+            if label:
+                clean_label = re.sub(r'<[^>]+>', '', label)  # Entferne HTML-Tags
+                suggestions.append({
+                    'label': clean_label,
+                    'lat': attrs.get('lat'),
+                    'lon': attrs.get('lon'),
+                    'plz': attrs.get('plz') if 'plz' in attrs else None
+                })
+        return suggestions
+    except Exception as e:
+        print(f"  [GEO FEHLER bei Vorschlägen] {e}")
+        return []
+
 def get_coordinates_from_address(address_string):
     """Fragt Swisstopo API ab, um Adresse in LV95-Koordinaten umzuwandeln."""
     print(f"[GEO] Suche Koordinaten für: '{address_string}'")
-    params = {'searchText': address_string, 'type': 'locations', 'limit': 1, 'sr': '2056'}
+    params = {'searchText': address_string, 'type': 'locations', 'limit': 1}
     try:
         response = requests.get(GEO_API_URL, params=params)
         response.raise_for_status()
@@ -38,7 +68,13 @@ def get_coordinates_from_address(address_string):
             return None, None, None
         attrs = results[0]['attrs']
         # LV95 Koordinaten (Y = lat, X = lon)
-        return attrs['lat'], attrs['lon'], attrs['plz']
+        plz = attrs.get('plz')
+        if not plz:
+            # Versuche PLZ aus dem Label zu extrahieren
+            label = attrs.get('label', '')
+            plz_match = re.search(r'\b(\d{4})\b', label)
+            plz = int(plz_match.group(1)) if plz_match else None
+        return attrs['lat'], attrs['lon'], plz
     except Exception as e:
         print(f"  [GEO FEHLER] {e}")
         return None, None, None
@@ -99,14 +135,18 @@ def get_energy_profile_for_address(address_string):
     """
     Haupt-Workflow (ECHTE API-AUFRUFE): Nimmt eine Adresse und gibt ein Profil-Dict zurück.
     """
-    print(f"--- [ENRICHER] Starte ECHTE Analyse für: {address_string} ---")
+    # Bereinige Adresse: entferne HTML-Tags und extra Whitespace
+    clean_address = re.sub(r'<[^>]+>', '', address_string).strip()
+    print(f"--- [ENRICHER] Starte ECHTE Analyse für: {clean_address} ---")
     
     # 0. Eindeutige ID generieren (aus Adresse gehasht)
-    building_id = hashlib.md5(address_string.encode()).hexdigest()[:10]
+    building_id = hashlib.md5(clean_address.encode()).hexdigest()[:10]
     
     # 1. Adresse -> Koordinaten (Echte API)
-    lat, lon, plz = get_coordinates_from_address(address_string)
-    if not lat: return None, None
+    lat, lon, plz = get_coordinates_from_address(clean_address)
+    if not lat: 
+        print(f"  [ENRICHER] Keine Koordinaten gefunden für: {clean_address}")
+        return None, None
         
     # 2. Koordinaten -> PV-Potenzial (Echte API)
     pv_kwh_pa, pv_kwp = get_pv_potential_from_coords(lat, lon)
@@ -121,7 +161,7 @@ def get_energy_profile_for_address(address_string):
     
     final_estimates = {
         "building_id": building_id,
-        "address": address_string,
+        "address": clean_address,  # Verwende bereinigte Adresse
         "plz": plz,
         "lat": lat,
         "lon": lon,

@@ -2,6 +2,7 @@ flask
 pandas
 numpy
 scikit-learn
+scipy
 requests
 twilio
 

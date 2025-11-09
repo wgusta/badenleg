@@ -69,7 +69,7 @@ flask run
 python app.py
 ```
 
-Die Anwendung läuft dann auf [http://localhost:5000](http://localhost:5000)
+Die Anwendung läuft dann auf [http://localhost:5002](http://localhost:5002)
 
 ## Projektstruktur
 
