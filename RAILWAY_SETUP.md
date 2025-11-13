@@ -24,12 +24,25 @@ FLASK_DEBUG=False
 APP_BASE_URL=https://www.badenleg.ch
 SECRET_KEY=<generiere einen sicheren Key>
 ALLOWED_HOSTS=badenleg.ch,www.badenleg.ch
+SENDGRID_API_KEY=<dein SendGrid API Key>
+FROM_EMAIL=noreply@badenleg.ch
 ```
 
 **SECRET_KEY generieren:**
 ```bash
 python3 -c "import secrets; print(secrets.token_hex(32))"
 ```
+
+**SENDGRID_API_KEY erstellen:**
+1. Gehe zu https://signup.sendgrid.com/ (Kostenlos bis 100 Emails/Tag)
+2. Erstelle einen Account
+3. Gehe zu Settings → API Keys → "Create API Key"
+4. Name: `badenleg-production`, Permissions: "Full Access"
+5. Kopiere den API Key (wird nur einmal angezeigt!)
+6. Verifiziere Sender-Identity:
+   - Settings → Sender Authentication → Single Sender Verification
+   - Füge `noreply@badenleg.ch` hinzu (oder deine bevorzugte E-Mail)
+   - Bestätige die Verifizierungs-E-Mail
 
 ## Schritt 4: Railway Token und Service ID holen
 
