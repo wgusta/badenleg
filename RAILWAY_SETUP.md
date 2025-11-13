@@ -21,11 +21,8 @@ Füge diese Environment Variables hinzu:
 ```
 FLASK_ENV=production
 FLASK_DEBUG=False
-APP_BASE_URL=https://badenleg.ch
+APP_BASE_URL=https://www.badenleg.ch
 SECRET_KEY=<generiere einen sicheren Key>
-SESSION_COOKIE_SECURE=True
-SESSION_COOKIE_HTTPONLY=True
-SESSION_COOKIE_SAMESITE=Lax
 ALLOWED_HOSTS=badenleg.ch,www.badenleg.ch
 ```
 
