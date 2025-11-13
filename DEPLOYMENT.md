@@ -40,7 +40,101 @@ Review `SECURITY.md` and ensure all recommendations are followed.
 
 ## Deployment Options
 
-### Option A: Simple Deployment (Gunicorn)
+### Option A: GitHub Actions (Recommended for Infomaniak)
+
+This is the recommended deployment method for Infomaniak hosting. It automatically deploys when you push to the `main` branch.
+
+#### Prerequisites
+
+1. **Server Setup on Infomaniak**:
+   ```bash
+   # SSH into your Infomaniak server
+   ssh user@your-server.infomaniak.ch
+   
+   # Navigate to your web directory
+   cd ~/www
+   
+   # Clone the repository (if not already done)
+   git clone https://github.com/wgusta/badenleg.git badenleg
+   cd badenleg
+   
+   # Create virtual environment
+   python3 -m venv venv
+   source venv/bin/activate
+   
+   # Install dependencies
+   pip install -r requirements.txt
+   
+   # Create tmp directory for Passenger restarts
+   mkdir -p tmp
+   
+   # Set up .env file (see Pre-Deployment Checklist above)
+   cp env.example .env
+   # Edit .env with production values
+   ```
+
+2. **SSH Key Setup for GitHub Actions**:
+   ```bash
+   # On your local machine, generate an SSH key for deployment
+   ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/infomaniak_deploy
+   
+   # Copy the PUBLIC key to Infomaniak server
+   ssh-copy-id -i ~/.ssh/infomaniak_deploy.pub user@your-server.infomaniak.ch
+   
+   # Display the PRIVATE key (you'll add this to GitHub Secrets)
+   cat ~/.ssh/infomaniak_deploy
+   ```
+
+3. **Configure GitHub Secrets**:
+   - Go to: https://github.com/wgusta/badenleg/settings/secrets/actions
+   - Click "New repository secret" and add:
+     - `INFOMANIAK_HOST`: Your Infomaniak SSH hostname (e.g., `your-server.infomaniak.ch`)
+     - `INFOMANIAK_USER`: Your SSH username
+     - `INFOMANIAK_SSH_KEY`: The private SSH key content (from step 2)
+     - `INFOMANIAK_DEPLOY_PATH`: Path on server (e.g., `~/www/badenleg`)
+     - `INFOMANIAK_SSH_PORT`: SSH port (usually 22, optional)
+
+#### Deployment Workflow
+
+1. **Development**:
+   ```bash
+   # Work on feature branches
+   git checkout develop
+   git checkout -b feature/new-feature
+   # ... make changes ...
+   git commit -m "Add new feature"
+   git push origin feature/new-feature
+   # Create PR on GitHub: feature → develop
+   ```
+
+2. **Deploy to Production**:
+   ```bash
+   # Merge develop into main
+   git checkout main
+   git merge develop
+   git push origin main
+   ```
+   
+   GitHub Actions will automatically:
+   - SSH to Infomaniak server
+   - Pull latest code from main branch
+   - Update dependencies
+   - Restart Passenger application
+   - Verify deployment
+
+3. **Manual Trigger** (if needed):
+   - Go to: https://github.com/wgusta/badenleg/actions
+   - Select "Deploy to Infomaniak" workflow
+   - Click "Run workflow" → Select branch `main` → Run
+
+#### Troubleshooting
+
+- **Deployment fails**: Check GitHub Actions logs at https://github.com/wgusta/badenleg/actions
+- **SSH connection fails**: Verify SSH key is correctly added to GitHub Secrets
+- **Application not updating**: Check if `tmp/restart.txt` is being touched (Passenger restart)
+- **Dependencies not updating**: Check virtual environment activation in workflow
+
+### Option B: Simple Deployment (Gunicorn)
 
 1. **Install Gunicorn**:
 ```bash
@@ -77,7 +171,7 @@ sudo systemctl start badenleg
 sudo systemctl enable badenleg
 ```
 
-### Option B: Docker Deployment
+### Option C: Docker Deployment
 
 1. **Create Dockerfile**:
 ```dockerfile
@@ -133,6 +227,83 @@ volumes:
 3. **Deploy**:
 ```bash
 docker-compose up -d
+```
+
+## Branch Protection and Workflow
+
+### GitHub Branch Protection Rules
+
+To ensure code quality and prevent accidental deployments, configure branch protection:
+
+1. **Go to**: https://github.com/wgusta/badenleg/settings/branches
+2. **Add rule for `main` branch**:
+   - ✅ Require a pull request before merging
+   - ✅ Require approvals: 1 (or more)
+   - ✅ Require status checks to pass (optional: add CI checks)
+   - ✅ Require branches to be up to date before merging
+   - ✅ Do not allow bypassing the above settings
+   - ✅ Include administrators
+
+3. **Optional: Add rule for `develop` branch**:
+   - ✅ Require pull request reviews (can be less strict than main)
+   - ⚠️ Allow force pushes (for development flexibility)
+
+### Branch Workflow
+
+**Development Flow:**
+```
+feature/xyz → develop → main → production (auto-deploy)
+```
+
+1. **Feature Development**:
+   ```bash
+   git checkout develop
+   git pull origin develop
+   git checkout -b feature/your-feature-name
+   # Make changes, commit, push
+   git push origin feature/your-feature-name
+   # Create PR on GitHub: feature → develop
+   ```
+
+2. **Merge to Develop**:
+   - After PR review and approval
+   - Merge PR on GitHub
+   - `develop` branch is updated
+
+3. **Deploy to Production**:
+   ```bash
+   git checkout main
+   git pull origin main
+   git merge develop
+   git push origin main
+   # GitHub Actions automatically deploys
+   ```
+
+### Manual Deployment Fallback
+
+If GitHub Actions is unavailable, you can deploy manually:
+
+```bash
+# SSH into Infomaniak server
+ssh user@your-server.infomaniak.ch
+
+# Navigate to project directory
+cd ~/www/badenleg
+
+# Pull latest code
+git fetch origin
+git checkout main
+git pull origin main
+
+# Update dependencies
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Restart application
+touch tmp/restart.txt
+
+# Verify deployment
+curl https://badenleg.ch/health
 ```
 
 ## Nginx Configuration
