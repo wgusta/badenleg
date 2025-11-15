@@ -31,7 +31,7 @@
 3. Fülle das Formular aus:
    - **From Name**: BadenLEG
    - **From Email Address**: `noreply@badenleg.ch` (oder deine bevorzugte)
-   - **Reply To**: `leg@sihliconvalley.ch`
+   - **Reply To**: `hallo@badenleg.ch`
    - **Company Address**: Deine Firmenadresse
 4. Klicke "Create"
 5. **Wichtig**: Du erhältst eine Bestätigungs-E-Mail → **Klicke den Link!**

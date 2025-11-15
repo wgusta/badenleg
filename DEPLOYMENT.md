@@ -656,7 +656,7 @@ sudo systemctl restart badenleg
 ## Support
 
 For deployment support:
-- Email: leg@sihliconvalley.ch
+- Email: hallo@badenleg.ch
 - Check SECURITY.md for security issues
 - Review logs in `/path/to/badenleg/badenleg_security.log`
 
