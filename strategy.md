@@ -252,3 +252,4 @@ This project already contains several strategic drafts; below is how they perfor
 - Add monitoring/alerting (Sentry/GA/Metrics) and test backup restores.
 - Define and generate a formal “utility handoff package” (PDF export + field list) and add a simple admin UI for downloads.
 - Configure SendGrid/SMTP with domain authentication for reliable delivery.
+- Configure GitHub push access (SSH key) and push latest local commit (`Add consent exports and admin/utility handoff groundwork`) once credentials are available.
