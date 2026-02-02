@@ -1,580 +1,439 @@
-# START HERE: BadenLEG Acquisition Strategy
-**Date:** Feb 2, 2026
-**Timeline:** 6 months (Feb-Aug 2026)
-**Goal:** Regionalwerke Baden acquisition for CHF 300-500K
+# BadenLEG: Start Here 🚀
+
+**Created:** Feb 2, 2026
+**Goal:** Acquisition by Regionalwerke Baden (Aug 2026)
+**Status:** Planning complete, ready to execute
 
 ---
 
 ## TL;DR
 
-**Situation:** LEG legal since Jan 1, 2026. Platform has foundation (PostgreSQL, referrals, GA4, formation wizard code) but needs proof points Regionalwerke Baden will buy.
+You have **6 months** to turn BadenLEG into a CHF 300-500K acquisition target for Regionalwerke Baden.
 
-**Strategy:** Build acquisition evidence in 6 months:
-1. **Feb-Mar:** Prove demand (500+ consented households)
-2. **Apr-May:** Prove capability (20+ communities forming)
-3. **May-Jun:** Prove operational readiness (utility handoff package)
-4. **Jun-Aug:** Negotiate & close acquisition
+**The Plan:**
+1. **Feb-Mar (6 weeks):** Get 500+ verified households registered
+2. **Mar-May (8 weeks):** Build formation wizard, activate 20 communities
+3. **May-Jun (6 weeks):** Create utility ops dashboard + export package
+4. **Jun-Aug (8 weeks):** Pitch, negotiate, close acquisition
 
-**Required:** 480 dev hours (20h/week), CHF 10-15K budget, ruthless focus
+**Why This Works:**
+- Regionalwerke MUST support LEG (legal requirement since Jan 1, 2026)
+- Building internal platform costs them CHF 300-500K + 12 months
+- You'll have 500+ verified, consented customers ready to activate
+- You'll have proven formation process + operational tools
+- Acquisition is their fastest, cheapest path to LEG compliance
+
+**Your Next Action (Monday Feb 3):**
+1. Deploy live counter to homepage (2h)
+2. Launch Facebook ads (CHF 100/day) (1h)
+3. Email 10 solar installers for partnerships (2h)
+4. Set up email automation (2h)
 
 ---
 
-## The 3 Core Documents
+## Planning Documents (Read in This Order)
 
-### 1. **ACQUISITION_PLAN.md**
-Strategic overview:
-- Why Regionalwerke will buy (4 proof points)
-- 4-phase roadmap with features prioritized by acquisition value
-- What NOT to build (skip perfection, build evidence)
-- Success metrics & risk mitigation
-- Acquisition pitch framework
+### 1. **ACQUISITION_PLAN.md** ⭐ START HERE
+**Read Time:** 20 minutes
+**Purpose:** Strategic overview
 
-**Read this for:** Big picture strategy, why we're building each feature
+Understand:
+- Why Regionalwerke Baden will buy you
+- What features prove acquisition value
+- What NOT to build (save time)
+- 4-phase roadmap with clear milestones
+- Success metrics
 
-### 2. **TECHNICAL_ROADMAP.md**
-Detailed implementation:
-- Phase-by-phase breakdown (Feb→Mar→Apr→May→Jun→Aug)
-- Exact features with code examples
-- File names, API endpoints, database schemas
-- Hour estimates per task
+**Key Insight:** Skip perfection. Build evidence of demand, formation capability, and operational readiness. That's what they buy.
+
+---
+
+### 2. **IMPLEMENTATION_CHECKLIST.md** ⭐ DAILY REFERENCE
+**Read Time:** 10 minutes
+**Purpose:** Quick reference, daily execution
+
+Use this for:
+- Week-by-week task list
+- Critical files to create/modify
+- Database schema changes
+- Daily/weekly routine
+- Red flags to watch
+- Quick wins
+
+**Key Insight:** Check this every Monday. Update your progress. Stay on track.
+
+---
+
+### 3. **TECHNICAL_ROADMAP.md**
+**Read Time:** 45 minutes
+**Purpose:** Detailed feature specifications
+
+Covers:
+- Exact code to write for each feature
+- API endpoints with full examples
+- Database queries
+- HTML templates (copy-paste ready)
 - Acceptance criteria
+- Time estimates (480h total over 20 weeks)
 
-**Read this for:** What to build, how to build it, technical specs
-
-### 3. **WEEK_BY_WEEK_PLAN.md**
-Execution timeline:
-- 26 weeks of day-by-day tasks
-- Monday: Planning, Tuesday-Thursday: Building, Friday: Shipping
-- Weekly metrics to track
-- Risk triggers & adjustments
-- Daily habits & review templates
-
-**Read this for:** What to do this week, today, right now
+**Key Insight:** When building a feature, open this doc. It has the complete spec with code examples.
 
 ---
 
-## Current State (Feb 2, 2026)
+### 4. **WEEKLY_EXECUTION_PLAN.md**
+**Read Time:** 30 minutes
+**Purpose:** Tactical week-by-week breakdown
 
-### ✅ **Done (Phase 0)**
-- PostgreSQL database layer
+Details:
+- What to build each week (Monday-Friday)
+- Time allocation per task
+- Weekly targets (registrations, formations, etc.)
+- Deployment schedule
+- Metrics review process
+
+**Key Insight:** Review every Monday morning. Adjust based on previous week's results.
+
+---
+
+### 5. **MARKETING_GROWTH_STRATEGY.md**
+**Read Time:** 40 minutes
+**Purpose:** Complete marketing playbook
+
+Includes:
+- Facebook/Instagram ad copy (ready to use)
+- Partnership outreach templates
+- PR strategy + press release template
+- Referral program mechanics
+- Email sequences (subject lines + content)
+- Social media calendar
+- Budget breakdown (CHF 5K total)
+
+**Key Insight:** Marketing is 50% of success. Don't just build, promote aggressively.
+
+---
+
+## Current State Assessment
+
+### ✅ What You Have (Production-Ready)
+- PostgreSQL database with connection pooling
 - Referral system with tracking
 - Google Analytics 4 integration
-- Formation wizard module (670 LOC Python)
-- Consent capture (utility handoff + neighbor sharing)
-- Audit logging
+- Formation wizard backend (`formation_wizard.py` - 670 LOC)
+- Consent capture (neighbor + utility sharing)
 - Admin endpoints (token-protected)
-- Security hardening
+- Security hardening (rate limits, validation, headers)
+- Email infrastructure (SendGrid configured)
 
-### ⚠️ **Partially Done**
-- Admin dashboard (basic, needs enhancement)
-- Email automation (SendGrid configured, limited flows)
-- Formation wizard (backend done, UI not integrated)
+### ⚠️ Partially Complete
+- Admin dashboard (basic, needs expansion)
+- Export functionality (exists but not utility-optimized)
+- Email automation (configured but limited flows)
 
-### ❌ **Missing (Critical for Acquisition)**
-- Formation wizard UI (community creation, invites, signatures)
-- Utility handoff package (PDF bundle, CSV exports)
-- Internal ops dashboard (case management, pipeline view)
-- Document generation (contracts, DSO forms)
-- User dashboard (readiness score, next steps)
-- Growth engine (email nurture, A/B tests, referral push)
-
----
-
-## The 4 Proof Points Regionalwerke Needs
-
-### 1. **Demand Proof**
-**Goal:** 500+ verified households with explicit utility consent
-**Timeline:** Feb-Mar 2026 (8 weeks)
-**How:**
-- Marketing blitz (Facebook ads, CHF 3K)
-- Partnership outreach (10 solar installers)
-- Email automation (Day 1, 3, 7, 14 sequences)
-- Referral program push (CHF 50 credits)
-- Press coverage (Badener Tagblatt)
-
-**Success Metric:** 70%+ utility consent rate, 20+ neighborhoods covered
-
-### 2. **Formation Capability**
-**Goal:** 20+ communities reach "handoff-ready" state
-**Timeline:** Apr-May 2026 (8 weeks)
-**How:**
-- Formation wizard UI (create, invite, documents, signatures)
-- Document generation (community agreement, contracts, DSO forms)
-- Pilot with 5 communities (white-glove support)
-- 10+ DSO submissions to Regionalwerke
-
-**Success Metric:** <3 weeks average formation time, 100% signature collection rate
-
-### 3. **Operational Readiness**
-**Goal:** Prove platform can handle utility-scale operations
-**Timeline:** May-Jun 2026 (6 weeks)
-**How:**
-- Internal admin console (pipeline view, case management)
-- Utility handoff package (PDF bundle + CSV with all required fields)
-- API endpoints (programmatic access for utility)
-- Audit log (full compliance trail)
-
-**Success Metric:** Complete export package for 20+ communities, API documented
-
-### 4. **Acquisition Pitch**
-**Goal:** Close deal with Regionalwerke Baden
-**Timeline:** Jun-Aug 2026 (10 weeks)
-**How:**
-- Proof package (metrics dashboard, testimonials, media coverage)
-- Cost avoidance analysis (CHF 300K build cost vs. CHF 400K acquisition)
-- First contact (email + pitch deck)
-- Negotiation (term sheet, due diligence, closing)
-
-**Success Metric:** CHF 300-500K acquisition by Aug 31, 2026
+### ❌ What You Need to Build
+- **Formation wizard UI** (backend exists, needs frontend)
+- **User dashboard** (readiness score, community status)
+- **Document generation** (PDF contracts, DSO forms)
+- **Utility handoff package** (clean CSV/JSON exports)
+- **Internal ops dashboard** (pipeline view, case management)
+- **Marketing campaigns** (ads, partnerships, PR)
 
 ---
 
-## What Makes This Different
+## Recommended Reading Order
 
-### ❌ **Traditional SaaS Playbook:**
-- Build perfect product
-- Optimize every feature
-- Scale to 10,000+ users
-- Monetize via subscriptions
-- Exit in 3-5 years
+### First Session (1 hour)
+1. Read ACQUISITION_PLAN.md (20 min)
+2. Read IMPLEMENTATION_CHECKLIST.md (10 min)
+3. Skim WEEKLY_EXECUTION_PLAN.md Week 1-4 (15 min)
+4. Skim MARKETING_GROWTH_STRATEGY.md Facebook Ads section (15 min)
 
-### ✅ **Acquisition-Focused Playbook:**
-- Build proof of concept
-- Ship fast, iterate
-- 500 users sufficient (if consented + activated)
-- Revenue optional (acquisition is monetization)
-- Exit in 6 months
+### Second Session (1 hour)
+1. Read TECHNICAL_ROADMAP.md Phase 1 (Demand Engine) (30 min)
+2. Read WEEKLY_EXECUTION_PLAN.md Week 1-2 in detail (20 min)
+3. Set up development environment (10 min)
 
-**Key Insight:** Utilities don't buy perfect products. They buy solutions to urgent problems with proven demand.
+### Third Session (2 hours)
+1. Deploy live counter (see TECHNICAL_ROADMAP.md 1.1)
+2. Update homepage with urgency elements
+3. Launch first Facebook ad
+4. Email 5 solar installers
 
-Regionalwerke Baden's problem:
-- LEG legal requirement (since Jan 1, 2026)
-- Customer expectations (households want LEG)
-- No internal solution (would take 12+ months, CHF 300K+)
-- BadenLEG solves all 3 (ready now, proven demand, CHF 400K)
-
----
-
-## Resource Requirements
-
-### Time
-- **480 hours total** over 6 months
-- **20 hours/week** average
-- **Peak weeks:** 25-30 hours (formation wizard, acquisition prep)
-- **Light weeks:** 15 hours (waiting for lawyer, due diligence)
-
-**Feasible if:** No other full-time job OR very flexible hours
-
-### Money
-- **Marketing:** CHF 5K (Facebook ads, partnerships)
-- **Legal:** CHF 3K (contract review, term sheet)
-- **Tools/Hosting:** CHF 2K (SendGrid, Railway/VPS, domains)
-- **Contingency:** CHF 5K (unexpected costs)
-- **Total:** CHF 15K
-
-**Feasible if:** You have runway for 6 months
-
-### Skills
-**Must-have:**
-- Python/Flask (you have this - code exists)
-- Frontend (HTML/CSS/JS with Tailwind - you have this)
-- PostgreSQL (database layer done)
-- Git/deployment (Railway or Infomaniak)
-
-**Nice-to-have:**
-- Marketing (can learn or outsource)
-- Design (Canva/Figma sufficient)
-- Legal (hire lawyer for CHF 3K)
-
-**Biggest skill:** Ruthless prioritization (say no to 90% of ideas)
+**By end of Day 1, you should have:**
+- Live counter on homepage
+- Facebook ad running
+- 5 installer outreach emails sent
+- Clear plan for rest of week
 
 ---
 
-## Critical Success Factors
+## Key Principles (Remember These)
 
-### 1. **Focus**
-Every feature decision asks: **"Does this prove acquisition value?"**
+### 1. **Acquisition Value Over Feature Completeness**
+Every feature decision: "Does this prove acquisition value?"
 - More verified households? ✅ Build it
-- Better UX polish? ❌ Skip it (for now)
+- Better UX polish? ❌ Skip it
 - Utility handoff package? ✅ Build it
-- Mobile app? ❌ Skip it (web sufficient)
-- Formation automation? ✅ Build it
-- Advanced analytics? ❌ Skip it (basic metrics sufficient)
+- Mobile app? ❌ Skip it
 
-**Rule:** If it doesn't directly support acquisition, it's distraction.
+### 2. **Speed Over Perfection**
+Ship fast, iterate faster.
+- Week 1: Homepage updates + ads launch
+- Week 2: User dashboard MVP
+- Week 7: Formation wizard V1
+- Don't wait for perfect, ship functional
 
-### 2. **Speed**
-Ship every week. Minimum viable features. Iterate based on feedback.
+### 3. **Measure Everything**
+Track weekly:
+- Registrations (target: 500 by May)
+- Communities forming (target: 20 by Jun)
+- Utility consent rate (target: 70%+)
+- Cost per registration (target: < CHF 40)
 
-**Bad:**
-- Spend 4 weeks perfecting formation wizard UI
-- Launch when "perfect"
-- No user feedback until complete
+### 4. **Focus on Proof Points**
+Regionalwerke buys 4 things:
+1. **Verified demand** (registered, consented households)
+2. **Formation capability** (communities reaching "ready" state)
+3. **Utility handoff package** (clean exports, consent management)
+4. **Operational readiness** (dashboard, case handling, audit trail)
 
-**Good:**
-- Ship basic form in Week 1 (ugly but works)
-- Get pilot users to test Week 2
-- Fix bugs & iterate Week 3-4
-- Feature complete by Week 4
+Build these. Nothing else matters.
 
-**Mantra:** "Done is better than perfect"
-
-### 3. **Metrics**
-Track weekly. Adjust quickly. Kill what doesn't work.
-
-**Every Monday morning:**
-- Total registrations (target growth: +30/week in Feb-Mar)
-- Verification rate (target: >70%)
-- Utility consent rate (target: >70%)
-- Communities forming (target: 1-2/week in Apr-May)
-
-**If behind target:** Adjust immediately (more marketing, fix funnel, simplify UX)
-
-### 4. **Support**
-Don't do everything alone.
-
-**Get help for:**
-- Legal review (hire lawyer, CHF 2-3K)
-- Document design (hire designer if needed, CHF 500)
-- Partnership outreach (VA for email follow-ups, optional)
-- Pitch practice (advisor, friend, mentor)
-
-**Your unique value:** Technical execution + strategic vision
-
-### 5. **Resilience**
-Setbacks will happen:
-- Marketing doesn't convert → Try new channels
-- Formation wizard confusing → Simplify UX
-- Regionalwerke ignores email → Contact Eniwa
-- Negotiation stalls → Activate plan B
-
-**Success = persistence + adaptability**
+### 5. **Marketing = 50% of Success**
+Don't just build, promote:
+- Facebook ads (CHF 3K budget)
+- Partnerships (10 solar installers)
+- PR (press releases, media outreach)
+- Referral program (viral growth)
 
 ---
 
-## Week 1 Action Items (Feb 3-9)
+## Success Milestones
 
-Start here on Monday:
+### February 28 (Week 4)
+- ✅ 100 registrations
+- ✅ Email automation live
+- ✅ 2 installer partnerships
+- ✅ Facebook ads optimized
 
-### Monday (4h)
-- [ ] Read all 3 planning docs (ACQUISITION_PLAN, TECHNICAL_ROADMAP, WEEK_BY_WEEK_PLAN)
-- [ ] Set up weekly review ritual (every Friday 3pm)
-- [ ] Update homepage with urgency messaging
-- [ ] Deploy live user counter API
+### March 31 (Week 8)
+- ✅ 300 registrations
+- ✅ Formation wizard deployed
+- ✅ 5 pilot communities forming
 
-### Tuesday (4h)
-- [ ] Set up Facebook Ads account
-- [ ] Create first ad campaign (CHF 500 budget)
-- [ ] Target: Baden homeowners, age 30-70
+### April 30 (Week 12)
+- ✅ 450 registrations
+- ✅ 15 communities formed
+- ✅ 10 DSO submissions
 
-### Wednesday (4h)
-- [ ] Research 10 solar installers in Baden
-- [ ] Draft partnership email template
-- [ ] Prepare partnership flyer concept
+### May 31 (Week 16)
+- ✅ 550 registrations
+- ✅ 25 communities formed
+- ✅ Admin dashboard operational
+- ✅ Utility handoff package ready
 
-### Thursday (4h)
-- [ ] Send 10 installer partnership emails
-- [ ] Send 5 housing cooperative emails
-- [ ] Track responses
+### June 30 (Week 20)
+- ✅ 650 registrations
+- ✅ 35 communities formed
+- ✅ Acquisition deck presented
+- ✅ First meeting with Regionalwerke
 
-### Friday (3h)
-- [ ] Weekly review (use template in WEEK_BY_WEEK_PLAN)
-- [ ] Check metrics (registrations, ads performance)
-- [ ] Plan Week 2
-
-**Week 1 Goal:** 20 new registrations, 1-2 partnership responses
-
----
-
-## Monthly Milestones
-
-### February: Demand Engine
-- [ ] Feb 28: 200+ registrations
-- [ ] Email automation live (4 sequences)
-- [ ] 2+ partnerships active
-- [ ] User dashboard with readiness score
-
-### March: Growth Acceleration
-- [ ] Mar 31: 500+ registrations
-- [ ] 70%+ utility consent rate
-- [ ] Press mention (Badener Tagblatt)
-- [ ] A/B testing showing 5-10% conversion improvements
-
-### April: Formation UI
-- [ ] Apr 30: 10+ communities forming
-- [ ] Formation wizard UI complete
-- [ ] Document generation working (3 types)
-- [ ] 5 pilot communities started
-
-### May: Documents & Operations
-- [ ] May 31: 5+ DSO submissions
-- [ ] Legal review complete (lawyer sign-off)
-- [ ] Admin console deployed
-- [ ] Utility handoff package defined
-
-### June: Utility Integration
-- [ ] Jun 30: Pitch delivered to Regionalwerke Baden
-- [ ] API endpoints functional
-- [ ] Proof package complete (metrics, testimonials, media)
-- [ ] Integration guide written
-
-### July: Negotiation
-- [ ] Jul 31: Term sheet signed
-- [ ] Valuation agreed (target: CHF 300-400K + earnout)
-- [ ] Due diligence started
-
-### August: Closing
-- [ ] Aug 31: Deal closed! 🎉
-- [ ] Payment received
-- [ ] Transition begun
+### August 31 (Week 26)
+- ✅ 700+ registrations
+- ✅ 40+ communities formed
+- ✅ Acquisition closed (CHF 300-500K)
 
 ---
 
-## Risk Management
+## When You Feel Stuck
 
-### High-Risk Scenarios
+### "There's too much to do"
+→ Open IMPLEMENTATION_CHECKLIST.md
+→ Look at current week's tasks (3-5 items)
+→ Focus on TODAY's #1 priority
+→ Ship it, move to next
 
-**Risk 1: Not enough registrations**
-- **Kill criteria:** <200 by Mar 15
-- **Mitigation:** Front-load marketing (CHF 3K in Feb-Mar), aggressive partnerships
-- **Plan B:** Pivot to direct B2B sales (license to multiple utilities)
+### "I don't know how to build [feature]"
+→ Open TECHNICAL_ROADMAP.md
+→ Find the feature section
+→ Copy the code examples
+→ Modify for your context
+→ Test, deploy
 
-**Risk 2: Formation process too complex**
-- **Kill criteria:** <50% completion rate in pilot
-- **Mitigation:** Simplify UX, manual fallback, white-glove support
-- **Plan B:** Offer formation as service (charge CHF 199/household)
+### "Growth is stalling"
+→ Open MARKETING_GROWTH_STRATEGY.md
+→ Review current channels
+→ Double down on winners
+→ Cut underperformers
+→ Try 1 new tactic
 
-**Risk 3: Regionalwerke ignores outreach**
-- **Kill criteria:** No response after 3 follow-ups
-- **Mitigation:** PR pressure (media creates urgency), alternative contacts
-- **Plan B:** Eniwa, Axpo, EKZ (other utilities)
-
-**Risk 4: Valuation gap (they offer CHF 100K)**
-- **Kill criteria:** Below CHF 200K walk-away price
-- **Mitigation:** Show alternative buyer interest, emphasize cost avoidance
-- **Plan B:** Continue independent, grow to 2000+ users, sell in 2027
-
-### Green Light Scenarios
-
-**Scenario 1: >500 registrations by Mar 31**
-- **Action:** Increase marketing budget, accelerate formation features
-
-**Scenario 2: >20 communities forming by May 31**
-- **Action:** Prepare for scale, higher valuation (CHF 500-600K)
-
-**Scenario 3: Multiple utilities interested**
-- **Action:** Create auction dynamic, negotiate aggressively
-
-**Scenario 4: Regionalwerke proposes partnership instead**
-- **Action:** Evaluate carefully (CHF 150K for 40% equity = CHF 375K valuation)
+### "Acquisition feels far away"
+→ Review ACQUISITION_PLAN.md Section 8 (Next 30 Days)
+→ Focus on immediate proof points
+→ Track metrics weekly
+→ Trust the process
 
 ---
 
-## Decision Framework
+## Support & Resources
 
-When faced with any decision, ask these 3 questions:
+### Technical Questions
+- **Flask:** flask.palletsprojects.com/en/2.0.x/
+- **PostgreSQL:** postgresql.org/docs/current/
+- **WeasyPrint:** weasyprint.org/stable/
 
-### 1. **Does this prove acquisition value?**
-- YES → Prioritize
-- NO → Defer or skip
+### Marketing
+- **Facebook Ads:** facebook.com/business/help
+- **Google Analytics:** analytics.google.com/analytics/academy/
+- **Copywriting:** copyhackers.com
 
-### 2. **Can this be done faster/simpler?**
-- MVP version vs. perfect version
-- Manual vs. automated (manual is faster initially)
-- Buy vs. build (buy if faster)
+### Legal/Regulatory
+- **StromVG:** fedlex.admin.ch (search "Stromversorgungsgesetz")
+- **LEG Guidelines:** Regionalwerke Baden website
 
-### 3. **What's the opportunity cost?**
-- Is there something more important to work on?
-- Will this materially impact the 4 proof points?
-- Is this a "nice-to-have" or "must-have"?
-
-**Example:**
-- **Decision:** Should I build a mobile app?
-- **Q1:** Does this prove acquisition value? NO (web works fine)
-- **Q2:** Can this be done faster? N/A
-- **Q3:** Opportunity cost? HIGH (would take 40+ hours)
-- **Answer:** Skip it
-
-**Example:**
-- **Decision:** Should I build email automation?
-- **Q1:** Does this prove acquisition value? YES (increases registrations)
-- **Q2:** Can this be done faster? YES (simple triggers, basic templates)
-- **Q3:** Opportunity cost? LOW (16h for high-ROI feature)
-- **Answer:** Build it
+### Community
+- Swiss startup founders (local network)
+- Energy community forums (research if stuck)
 
 ---
 
-## Mental Models
+## Final Checklist Before You Start
 
-### Model 1: Acquisition Evidence Builder
-You're not building a product company. You're building acquisition evidence.
+### Pre-Launch (Do Once)
+- [ ] Read ACQUISITION_PLAN.md fully
+- [ ] Read IMPLEMENTATION_CHECKLIST.md fully
+- [ ] Skim all other docs (1-2 hours total)
+- [ ] Set up weekly calendar reminder (Monday review)
+- [ ] Create metrics tracking spreadsheet
+- [ ] Set up development environment
 
-**Product Company:**
-- Focus: Perfect UX, scalability, retention
-- Timeline: 3-5 years to exit
-- Users: 10,000+
-- Metrics: MRR, churn, LTV/CAC
+### Monday Feb 3 (Week 1 Day 1)
+- [ ] Deploy live counter
+- [ ] Update homepage urgency elements
+- [ ] Create Facebook Business Manager
+- [ ] Launch first ad (CHF 100/day, 5 days)
+- [ ] Email 10 solar installers
+- [ ] Set up email automation DB tables
+- [ ] Draft press release
 
-**Acquisition Evidence:**
-- Focus: Proof points that reduce buyer risk
-- Timeline: 6 months to exit
-- Users: 500+ (sufficient if consented)
-- Metrics: Consent rate, formation throughput, utility readiness
-
-**Implication:** Features that don't prove acquisition value are waste.
-
-### Model 2: Regulatory Arbitrage
-Utilities are slow. You're fast.
-
-**LEG legal:** Jan 1, 2026 (6 weeks ago)
-**Utility response:** 3-6 months (March-June 2026)
-**Your window:** NOW to June 2026
-
-**Strategy:** Move so fast they can't ignore you.
-- 500 households registered → They have to respond
-- 20 DSO submissions → They can't process without you
-- PR coverage → Customers expect utility to offer LEG
-
-**Pressure Point:** "You're legally required to offer LEG. We've built the solution. Acquire or build (12 months, CHF 300K+)."
-
-### Model 3: Proof Over Perfection
-Good enough is good enough.
-
-**Perfect formation wizard:**
-- Beautiful UI, animations, mobile app
-- Complex workflows, edge cases handled
-- 6 months to build
-
-**Good enough formation wizard:**
-- Basic forms, works on desktop + mobile web
-- Happy path only, manual fallback for edge cases
-- 4 weeks to build
-
-**Result:** 5 months saved, acquisition happens earlier
-
-**Lesson:** Optimize for "does it work?" not "is it beautiful?"
+### End of Week 1 (Friday Feb 9)
+- [ ] 20 registrations achieved
+- [ ] Email automation sending
+- [ ] 2 partnerships initiated
+- [ ] Press release ready
+- [ ] Week 2 plan clear
 
 ---
 
-## Success Visualization
+## Your Mindset for the Next 6 Months
 
-**August 31, 2026:**
+**This is a sprint, not a marathon.**
 
-You receive CHF 300,000 in your bank account.
+You have:
+- **480 hours** of development time
+- **CHF 5,000** marketing budget
+- **26 weeks** to prove the case
+- **1 shot** to get this right
 
-Regionalwerke Baden owns BadenLEG. They're integrating it into their systems. You're providing 3 months of transition support (CHF 20K additional).
+But you also have:
+- ✅ **Working infrastructure** (PostgreSQL, referrals, analytics)
+- ✅ **Complete plan** (this documentation)
+- ✅ **Clear goal** (CHF 300-500K acquisition)
+- ✅ **Proven model** (LEG is legal, demand exists)
+- ✅ **Motivated buyer** (Regionalwerke needs LEG solution)
 
-Earnout of CHF 100K kicks in after 12 months if retention >80% (likely).
+**You don't need to be perfect. You need to be fast.**
 
-**Total:** CHF 420K in 6 months from now.
+Ship weekly. Learn daily. Adjust constantly.
 
-**What you did:**
-- Built proof of demand (500+ households)
-- Built proof of capability (20+ communities)
-- Built proof of operational readiness (utility handoff)
-- Pitched convincingly (cost avoidance + time savings)
-- Negotiated successfully (CHF 300K + earnout)
-
-**What you didn't do:**
-- Perfect every feature
-- Scale to 10,000 users
-- Build mobile app
-- Implement 15-minute billing
-- Raise VC funding
-
-**Why it worked:**
-- Focused on acquisition from day 1
-- Shipped fast, iterated quickly
-- Said no to 90% of ideas
-- Proved value at every phase
-- Negotiated from strength
-
-**Now:** You have capital, experience, and options.
-
-**Next:** Repeat in another canton? Build something new? Take a break? Your choice.
+6 months from now, you're either:
+1. ✅ Closing a CHF 300-500K acquisition
+2. ✅ Running a sustainable CHF 100K+ ARR business
+3. ❌ Still "planning" (don't let this happen)
 
 ---
 
-## Final Checklist
+## The First Action (Right Now)
 
-Before you start, confirm:
+Close this document.
 
-- [ ] I have 20 hours/week for 6 months (120h/month)
-- [ ] I have CHF 15K budget (or can fundraise it)
-- [ ] I have technical skills (Python, web development)
-- [ ] I'm willing to focus ruthlessly (say no to distractions)
-- [ ] I understand this is a sprint, not a marathon
-- [ ] I have support (advisor, lawyer, friend who believes in me)
-- [ ] I'm ready to start Monday (Feb 3, 2026)
+Open IMPLEMENTATION_CHECKLIST.md.
 
-**If all checked: Start Monday. Execute plan. Close by August.**
+Find "Week 1: Launch (Feb 3-9)" section.
 
----
+Look at Monday's tasks.
 
-## Quick Reference
+Pick task #1: "Deploy live counter (`/api/stats/live`)".
 
-**Planning Docs:**
-- `ACQUISITION_PLAN.md` - Strategy & why
-- `TECHNICAL_ROADMAP.md` - What & how
-- `WEEK_BY_WEEK_PLAN.md` - When & execution
+Open TECHNICAL_ROADMAP.md Section 1.1.
 
-**Current Status:**
-- `README.md` - Technical overview
-- `strategy.md` - Original acquisition strategy
-- `formation_wizard.py` - Coded but not integrated
-- `database.py` - PostgreSQL layer (done)
+Copy the code.
 
-**Weekly Review:**
-- Every Friday 3pm
-- Template in `WEEK_BY_WEEK_PLAN.md`
-- Track metrics, adjust plan
+Paste into `app.py`.
 
-**Support:**
-- Legal: [Hire lawyer Week 15]
-- Technical: Railway support, PostgreSQL docs
-- Strategic: [Your advisors]
+Test locally.
+
+Deploy to production.
+
+**You just started.**
+
+Keep going. One task at a time. One week at a time.
+
+By August, you'll have built something Regionalwerke Baden can't refuse.
 
 ---
 
-## Get Started
+## Questions to Ask Yourself Weekly
 
-**Right now:**
-1. Read `ACQUISITION_PLAN.md` (30 min)
-2. Skim `TECHNICAL_ROADMAP.md` (20 min)
-3. Review `WEEK_BY_WEEK_PLAN.md` Week 1 (10 min)
+### Every Monday Morning
+1. Did I hit last week's registration target?
+2. What channel is working best?
+3. What should I build this week?
+4. What should I NOT build?
+5. Am I on track for acquisition readiness?
 
-**Monday:**
-1. Start Week 1 tasks
-2. Update homepage with urgency
-3. Launch Facebook ads
-
-**This week:**
-1. Complete Week 1 checklist
-2. Get 20 new registrations
-3. Send partnership emails
-
-**This month:**
-1. Hit 200 registrations by Feb 28
-2. Email automation live
-3. 2+ partnerships active
-
-**6 months from now:**
-1. Deal closed
-2. CHF 300K+ in bank
-3. Celebrate! 🎉
+### Every Friday Afternoon
+1. Did I ship this week's features?
+2. Are they working in production?
+3. What metrics improved?
+4. What surprised me this week?
+5. What will I do differently next week?
 
 ---
 
-**You can do this.**
+## A Note on Perfection
 
-**The plan is clear. The path is defined. The prize is worth it.**
+This plan is comprehensive, but it's not perfect.
 
-**Start Monday. Execute ruthlessly. Close by August.**
+You'll discover:
+- Features that don't work as expected
+- Marketing channels that underperform
+- User needs you didn't anticipate
+- Technical challenges you didn't foresee
 
-**Let's go.**
+**That's fine. Expected. Normal.**
+
+The plan is your starting point, not your prison.
+
+Adjust weekly based on data.
+Stay focused on acquisition value.
+Keep shipping.
 
 ---
 
-*Last updated: Feb 2, 2026*
-*Next review: Every Friday at 3pm*
-*Questions? Re-read the plan. Answer is there.*
+## Good Luck 🚀
+
+You've done the hard part (planning).
+
+Now comes the fun part (building).
+
+6 months. CHF 300-500K exit. Let's go.
+
+**Start Monday. Execute relentlessly. Exit by August.**
+
+---
+
+*Created: Feb 2, 2026*
+*Last Updated: Feb 2, 2026*
+*Next Review: Feb 10, 2026 (after Week 1)*
+
+**First Action:** Deploy live counter + launch Facebook ad (Monday Feb 3, 8am)
