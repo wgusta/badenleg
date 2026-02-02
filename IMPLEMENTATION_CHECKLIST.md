@@ -22,11 +22,11 @@
 ## Phase 1: Demand Engine (Weeks 1-6, Feb 3 - Mar 16)
 
 ### Week 1: Launch (Feb 3-9)
-- [ ] Deploy live counter (`/api/stats/live`)
-- [ ] Update homepage with urgency messaging
+- [x] Deploy live counter (`/api/stats/live`)
+- [x] Update homepage with urgency messaging
 - [ ] Launch Facebook ads (CHF 100/day)
 - [ ] Email 10 solar installers
-- [ ] Set up email automation infrastructure
+- [x] Set up email automation infrastructure
 - [ ] Press release draft
 
 **Target:** 20 registrations, 2 partnerships initiated
@@ -34,9 +34,9 @@
 ---
 
 ### Week 2: Automation (Feb 10-16)
-- [ ] User dashboard (`/dashboard`) with readiness score
-- [ ] Day 0-14 email sequence (4 emails)
-- [ ] Profile completion forms
+- [x] User dashboard (`/dashboard`) with readiness score
+- [x] Day 0-14 email sequence (4 emails)
+- [x] Profile completion forms (energy profile on dashboard)
 - [ ] A/B testing infrastructure
 - [ ] Follow up with installers (confirm 2 partnerships)
 
@@ -179,37 +179,37 @@
 ### New Files Needed
 
 **Backend:**
-- `email_automation.py` - Automated email sequences
-- `document_generator.py` - PDF generation
-- `api.py` - REST API endpoints
+- [x] `email_automation.py` - Automated email sequences
+- [ ] `document_generator.py` - PDF generation
+- [ ] `api.py` - REST API endpoints
 
 **Templates:**
-- `templates/dashboard.html` - User dashboard
-- `templates/formation/start.html` - Formation wizard start
-- `templates/formation/community.html` - Community status view
-- `templates/admin/operations.html` - Internal ops dashboard
-- `templates/emails/day_0_welcome.html` - Welcome email
-- `templates/emails/day_3_smartmeter.html` - Smart meter question
-- `templates/emails/day_7_consumption.html` - Consumption data
-- `templates/emails/day_14_readiness.html` - Readiness check
-- `templates/documents/community_agreement.html` - PDF template
-- `templates/documents/participant_contract.html` - PDF template
-- `templates/documents/dso_notification.html` - PDF template
+- [x] `templates/dashboard.html` - User dashboard
+- [ ] `templates/formation/start.html` - Formation wizard start
+- [ ] `templates/formation/community.html` - Community status view
+- [ ] `templates/admin/operations.html` - Internal ops dashboard
+- [x] `templates/emails/day_0_welcome.html` - Welcome email
+- [x] `templates/emails/day_3_smartmeter.html` - Smart meter question
+- [x] `templates/emails/day_7_consumption.html` - Consumption data
+- [x] `templates/emails/day_14_formation.html` - Formation nudge
+- [ ] `templates/documents/community_agreement.html` - PDF template
+- [ ] `templates/documents/participant_contract.html` - PDF template
+- [ ] `templates/documents/dso_notification.html` - PDF template
 
 ---
 
-### Files to Modify
+### Files Modified
 
 **Backend:**
-- `app.py` - Add new routes (formation, dashboard, admin)
-- `database.py` - Add helper methods (counts, filters)
+- [x] `app.py` - Added routes: `/dashboard`, `/api/cron/process-emails`, `/api/calculate_savings`, `/api/email/stats`; wired email scheduling into registration
+- [x] `database.py` - Added `scheduled_emails` table, 8 helper methods (email queue, neighbor count, dashboard data)
 
 **Frontend:**
-- `templates/index.html` - Add live counter, urgency elements
-- `templates/base.html` - Add Facebook Pixel
+- [x] `templates/index.html` - Live counter + urgency elements (already present)
 
 **Database:**
-- Add migrations for: `scheduled_emails`, `community_documents`
+- [x] `scheduled_emails` table added
+- [x] `community_documents` table (was already in schema)
 
 ---
 

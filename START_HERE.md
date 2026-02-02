@@ -123,19 +123,25 @@ Includes:
 - Admin endpoints (token-protected)
 - Security hardening (rate limits, validation, headers)
 - Email infrastructure (SendGrid configured)
+- Live counter on homepage (`/api/stats/live`, auto-refreshes every 30s)
+- Urgency messaging + savings callout on homepage
+- Email automation system (`email_automation.py`, 4-email drip: day 0/3/7/14)
+- Scheduled emails DB table with queue processing
+- User dashboard (`/dashboard`) with readiness score, energy profile form, savings calculator
+- Savings calculator API (`/api/calculate_savings`)
+- Cron endpoint for email queue (`/api/cron/process-emails`)
 
 ### ⚠️ Partially Complete
 - Admin dashboard (basic, needs expansion)
 - Export functionality (exists but not utility-optimized)
-- Email automation (configured but limited flows)
 
 ### ❌ What You Need to Build
 - **Formation wizard UI** (backend exists, needs frontend)
-- **User dashboard** (readiness score, community status)
 - **Document generation** (PDF contracts, DSO forms)
 - **Utility handoff package** (clean CSV/JSON exports)
 - **Internal ops dashboard** (pipeline view, case management)
 - **Marketing campaigns** (ads, partnerships, PR)
+- **A/B testing infrastructure**
 
 ---
 
