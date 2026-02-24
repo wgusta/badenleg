@@ -4,15 +4,15 @@
 
 Infomaniak VPS (83.228.223.66), Docker Compose, Caddy with auto TLS.
 
-SSH: `ssh -i ~/.ssh/infomaniak_badenleg root@83.228.223.66`
+SSH: `ssh -i ~/.ssh/infomaniak_badenleg ubuntu@83.228.223.66`
 
 ## Services
 
 | Service | Image | Port | Domain |
 |---------|-------|------|--------|
-| flask | Custom (Python 3.11) | 5000 | badenleg.ch |
+| flask | Custom (Python 3.11) | 5000 | openleg.ch |
 | postgres | postgres:16-alpine | 5432 | internal |
-| openclaw | Custom (Node) | 18789 | openclaw.badenleg.ch |
+| openclaw | Custom (Node) | 18789 | openclaw.openleg.ch |
 | caddy | caddy:latest | 80, 443 | reverse proxy |
 
 ## Deploy Changes
@@ -22,10 +22,10 @@ SSH: `ssh -i ~/.ssh/infomaniak_badenleg root@83.228.223.66`
 rsync -avz --exclude='.git' --exclude='.env' --exclude='__pycache__' \
   -e "ssh -i ~/.ssh/infomaniak_badenleg" \
   /Users/gusta/Projects/badenleg/ \
-  root@83.228.223.66:/opt/badenleg/
+  ubuntu@83.228.223.66:/opt/badenleg/
 
 # Rebuild and restart
-ssh -i ~/.ssh/infomaniak_badenleg root@83.228.223.66 \
+ssh -i ~/.ssh/infomaniak_badenleg ubuntu@83.228.223.66 \
   "cd /opt/badenleg && docker compose up -d --build"
 ```
 
@@ -38,7 +38,7 @@ To rebuild only flask: `docker compose up -d --build flask`
 3. rsync project files
 4. Create `.env` from `.env.example` with real secrets
 5. `docker compose up -d`
-6. Verify: `curl https://badenleg.ch`
+6. Verify: `curl https://openleg.ch`
 
 ## Database
 
@@ -49,41 +49,23 @@ Tables auto-created by `database.py:init_db()` on first Flask boot.
 ### Backup
 
 ```bash
-ssh -i ~/.ssh/infomaniak_badenleg root@83.228.223.66 \
-  "docker exec badenleg-postgres pg_dump -U badenleg badenleg" > backup_$(date +%Y%m%d).sql
+ssh -i ~/.ssh/infomaniak_badenleg ubuntu@83.228.223.66 \
+  "docker exec openleg-postgres pg_dump -U badenleg badenleg" > backup_$(date +%Y%m%d).sql
 ```
 
 ### Restore
 
 ```bash
-cat backup.sql | ssh -i ~/.ssh/infomaniak_badenleg root@83.228.223.66 \
-  "docker exec -i badenleg-postgres psql -U badenleg badenleg"
-```
-
-## Data Migration from Railway
-
-```bash
-# 1. Dump from Railway
-pg_dump "RAILWAY_DATABASE_URL" > railway_dump.sql
-
-# 2. Copy to VPS
-scp -i ~/.ssh/infomaniak_badenleg railway_dump.sql root@83.228.223.66:/tmp/
-
-# 3. Restore into container
-ssh -i ~/.ssh/infomaniak_badenleg root@83.228.223.66 \
-  "docker exec -i badenleg-postgres psql -U badenleg badenleg < /tmp/railway_dump.sql"
-
-# 4. Verify row counts
-ssh -i ~/.ssh/infomaniak_badenleg root@83.228.223.66 \
-  "docker exec badenleg-postgres psql -U badenleg badenleg -c 'SELECT schemaname, relname, n_live_tup FROM pg_stat_user_tables ORDER BY relname;'"
+cat backup.sql | ssh -i ~/.ssh/infomaniak_badenleg ubuntu@83.228.223.66 \
+  "docker exec -i openleg-postgres psql -U badenleg badenleg"
 ```
 
 ## DNS
 
 A records pointing to 83.228.223.66:
-- `badenleg.ch`
-- `www.badenleg.ch`
-- `openclaw.badenleg.ch`
+- `openleg.ch` (A record)
+- `*` wildcard (A record)
+- `www` (CNAME to openleg.ch)
 
 Caddy handles TLS certificates automatically.
 
@@ -111,13 +93,13 @@ docker compose restart
 docker compose down && docker compose up -d --build
 
 # Check postgres connectivity
-docker exec badenleg-postgres pg_isready -U badenleg
+docker exec openleg-postgres pg_isready -U badenleg
 ```
 
 ## Verification Checklist
 
-- [ ] `curl https://badenleg.ch` returns landing page
-- [ ] `curl https://openclaw.badenleg.ch` returns WebChat UI
+- [ ] `curl https://openleg.ch` returns landing page
+- [ ] `curl https://openclaw.openleg.ch` returns WebChat UI
 - [ ] `/admin/overview` works with ADMIN_TOKEN
 - [ ] Address autocomplete works
 - [ ] Registration flow completes
