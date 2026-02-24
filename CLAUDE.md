@@ -14,7 +14,7 @@ Runs on Infomaniak VPS (83.228.223.66) via Docker Compose:
 - **openclaw**: AI gateway on :18789 with MCP server (DB access)
 - **caddy**: reverse proxy, auto TLS
 
-Domains: `openleg.ch` (Flask), `*.openleg.ch` (multi-tenant municipalities), `api.openleg.ch` (Public API), `insights.openleg.ch` (B2B API), `openclaw.openleg.ch` (OpenClaw)
+Domains: `openleg.ch` (Flask), `<city>.openleg.ch` (multi-tenant municipalities), `api.openleg.ch` (Public API), `insights.openleg.ch` (B2B API), `claw.openleg.ch` (OpenClaw)
 
 ## Key Files
 
@@ -25,7 +25,8 @@ Domains: `openleg.ch` (Flask), `*.openleg.ch` (multi-tenant municipalities), `ap
 | `public_data.py` | ElCom SPARQL, Energie Reporter, Sonnendach fetchers + computed metrics |
 | `api_public.py` | Public REST API Blueprint (`/api/v1/*`), no auth, CORS |
 | `api_b2b.py` | B2B API Blueprint: auth, rate limiting, data serving |
-| `tenant.py` | Multi-tenant resolution: `*.openleg.ch` |
+| `health.py` | Health check blueprint: `/health`, `/livez` |
+| `tenant.py` | Multi-tenant resolution: `<city>.openleg.ch` |
 | `municipality.py` | Municipality onboarding + profil/verzeichnis pages |
 | `meter_data.py` | Smart meter CSV parsing (EKZ format) |
 | `insights_engine.py` | Aggregation: load profiles, solar index, flexibility |
@@ -38,13 +39,10 @@ Domains: `openleg.ch` (Flask), `*.openleg.ch` (multi-tenant municipalities), `ap
 ## Deploy
 
 ```bash
-# From local machine
-rsync -avz --exclude='.git' --exclude='.env' --exclude='__pycache__' \
-  -e "ssh -i ~/.ssh/infomaniak_badenleg" \
-  /Users/gusta/Projects/badenleg/ \
-  ubuntu@83.228.223.66:/opt/badenleg/
+# Full deploy: tests -> rsync -> build -> verify
+bash deploy.sh
 
-# On VPS
+# Manual (on VPS)
 ssh -i ~/.ssh/infomaniak_badenleg ubuntu@83.228.223.66
 cd /opt/badenleg && docker compose up -d --build flask
 ```
