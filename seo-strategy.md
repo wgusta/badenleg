@@ -16,15 +16,15 @@
 - Keyword targeting on landing pages: "LEG Gemeinde", "Stromgemeinschaft Schweiz", "StromVG Art 17d"
 
 ### What's Missing
-- **Canonical tags** on municipality profiles (profiles crawled but not canonicalized)
-- **Structured data** on profiles (no LocalPlace, no BreadcrumbList, no Dataset schema)
-- **og:image** on most pages (only index has one)
-- **Verzeichnis page** has NO meta tags, NO structured data
+- ~~**Canonical tags** on municipality profiles~~ ✅ Done
+- ~~**Structured data** on profiles~~ ✅ LocalPlace + BreadcrumbList added
+- ~~**og:image** on most pages~~ ✅ Added to profil + verzeichnis
+- ~~**Verzeichnis page** has NO meta tags, NO structured data~~ ✅ CollectionPage + canonical added
 - **No formation guide page** (missing "wie gründe ich eine LEG" content)
 - **No canton landing pages** (missing "/leg/zuerich", "/leg/bern" etc.)
 - **No financial calculator page** (savings calculator exists as widget, not as rankable page)
 - **No API developer landing page**
-- **H1 tags** on profiles are generic, not keyword-optimized
+- ~~**H1 tags** on profiles are generic~~ ✅ Keyword-optimized with tariff data
 - **Google Search Console** status unknown
 
 ---
@@ -79,14 +79,14 @@ OpenLEG's biggest SEO asset is 2131 individual municipality profile pages, each 
 
 **Goal:** Fix technical SEO foundations. No new pages needed.
 
-- [ ] **SEO-1**: Add canonical tags to `gemeinde/profil.html` template
-- [ ] **SEO-2**: Add LocalPlace JSON-LD schema to profil.html (name, description, geo coordinates, areaServed)
-- [ ] **SEO-3**: Optimize profil.html H1: "Stromtarif in {{ name }} 2026: {{ tariff }} Rp/kWh"
-- [ ] **SEO-4**: Add meta tags to `gemeinde/verzeichnis.html` (title, description, canonical)
-- [ ] **SEO-5**: Add CollectionPage schema to verzeichnis.html
-- [ ] **SEO-6**: Add og:image fallback to all pages (use static og-image.png if no dynamic image)
+- [x] **SEO-1**: Add canonical tags to `gemeinde/profil.html` template ✅ 2026-03-05
+- [x] **SEO-2**: Add LocalPlace JSON-LD schema to profil.html (name, description, geo coordinates, areaServed) ✅ 2026-03-05
+- [x] **SEO-3**: Optimize profil.html H1: "Stromtarif in {{ name }}: {{ tariff }} Rp/kWh" ✅ 2026-03-05
+- [x] **SEO-4**: Add meta tags to `gemeinde/verzeichnis.html` (title, description, canonical) ✅ 2026-03-05
+- [x] **SEO-5**: Add CollectionPage schema to verzeichnis.html ✅ 2026-03-05
+- [x] **SEO-6**: Add og:image fallback to all pages (use static og-image.png if no dynamic image) ✅ 2026-03-05
 - [ ] **SEO-7**: Verify Google Search Console setup (submit sitemap)
-- [ ] **SEO-8**: Add BreadcrumbList schema to profil and verzeichnis pages
+- [x] **SEO-8**: Add BreadcrumbList schema to profil and verzeichnis pages ✅ 2026-03-05
 
 ### Phase 2: Formation Content (Week 3-4)
 

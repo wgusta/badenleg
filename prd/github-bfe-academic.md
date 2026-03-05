@@ -30,7 +30,7 @@ Repo is public at `github.com/wgusta/openleg`. CI has test runner, secret scan, 
 - [ ] **GH-5**: `CONTRIBUTING.md` updated for post-pivot (free platform, not B2B SaaS)
 - [ ] **GH-6**: GitHub Issue templates: `bug.md`, `feature-request.md`, `research.md`
 - [ ] **GH-7**: GitHub project board created (kanban: Backlog, Ready, In Progress, Review, Done)
-- [ ] **GH-8**: Labels created: `strategic`, `seo`, `infrastructure`, `research`, `grant`, `academic`, `p0`, `p1`, `p2`
+- [x] **GH-8**: Labels created: `strategic`, `seo`, `infrastructure`, `research`, `grant`, `academic`, `p0`, `p1`, `p2` ✅ 2026-03-05
 - [ ] **GH-9**: Dependabot enabled for pip dependencies
 - [ ] **GH-10**: Branch protection on `main`: require PR, require CI pass
 

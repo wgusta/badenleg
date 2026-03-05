@@ -54,7 +54,7 @@ Before writing any code, ask: **"Does this help a citizen discover or form a LEG
 
 ## Acceptance Criteria
 
-- [ ] **FD-1**: CLAUDE.md updated with feature discipline section
+- [x] **FD-1**: CLAUDE.md updated with feature discipline section ✅ 2026-03-05
 - [ ] **FD-2**: `open-strategy.md` gets a stale warning header
 - [ ] **FD-3**: GitHub issue template `feature-request.md` includes the decision filter
 - [ ] **FD-4**: No PRD created for new features until 3 active municipalities

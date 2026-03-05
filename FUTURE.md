@@ -1,6 +1,6 @@
 # FUTURE.md
 
-Deferred strategy items. Revisit when preconditions met.
+Deferred strategy items. Revisit when preconditions met. Last updated: 2026-03-05.
 
 ## 1. GitHub Public + AGPL-3.0
 
