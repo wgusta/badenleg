@@ -26,7 +26,17 @@ Remaining hardening (tracked in `prd/github-bfe-academic.md` and GitHub issues #
 
 **Precondition:** AGPL public release done.
 
-## 3. SDAT-CH Integration
+## 3. DeerFlow Pattern Expansion
+
+Deferred multi-agent patterns from ByteDance DeerFlow (see `prd/deerflow-patterns.md`):
+- StateGraph orchestration for OpenClaw (LangGraph state machine)
+- Sandboxed code execution for academic data analysis
+- Full multi-agent sidecar (4-service architecture)
+- Report generation pipeline (PDF/MD feasibility reports)
+
+**Precondition:** 3+ active municipalities, BFE grant funding, or demonstrable LEA quality issues.
+
+## 4. SDAT-CH Integration
 
 Standardized Swiss data exchange for metering (SDAT-CH/eCH-0218). Long-term moat:
 - Automated meter data exchange with VNBs
