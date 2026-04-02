@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "project": "badenleg municipality demand capture and outreach pack",
+  "overview": "Turn resident demand capture into a municipality-ready outreach and operator workflow. The goal is to connect public data and SEO traffic to verified resident demand, municipality prioritization, and concrete next actions that support first active LEGs.",
+  "goals": [
+    "Measure verified resident demand in a way the operator can act on.",
+    "Prioritize municipalities using demand plus current public-data heuristics.",
+    "Generate a municipality outreach pack from real demand context.",
+    "Keep the work parallelizable across data, funnel, admin, and outreach lanes."
+  ],
+  "nonGoals": [
+    "Launching a new product line.",
+    "Building speculative Physical AI functionality.",
+    "Treating GitHub Issues as the internal kanban.",
+    "Auto-applying patches overnight."
+  ],
+  "successMetrics": [
+    "Operator can identify municipalities with verified resident demand from product data.",
+    "Outreach generation has access to a municipality demand snapshot or summary.",
+    "Admin/operator surface shows demand, formation pipeline, and next-action context.",
+    "Stable Ralph stories can be mirrored cleanly to GitHub Issues for visibility."
+  ],
+  "openQuestions": [
+    "What exact threshold should count as verified resident demand for a municipality?",
+    "Which existing resident events are reliable enough to seed the first version of the signal?"
+  ],
+  "stack": {
+    "backend": "Flask / Python 3.11",
+    "database": "PostgreSQL 16",
+    "cache": "Redis 7",
+    "reverseProxy": "Caddy"
+  },
+  "routes": [
+    "/admin/strategy",
+    "/gemeinde/onboarding"
+  ],
+  "uiNotes": [
+    "Operator/admin surfaces should prefer ranked lists, status summaries, and next actions over generic analytics dumps.",
+    "Public/municipality messaging should reinforce municipality enablement and resident demand, not speculative roadmap themes."
+  ],
+  "dataModel": [
+    {
+      "name": "municipality demand snapshot",
+      "description": "Per-municipality rollup of resident demand and formation signal used in admin and outreach workflows."
+    }
+  ],
+  "importFormat": {
+    "description": "n/a",
+    "example": {}
+  },
+  "rules": [
+    "Respect `prd/feature-discipline.md` before creating or running stories.",
+    "Prefer bugfix, SEO/content, infrastructure, docs, grant, and academic-outreach support work.",
+    "Do not treat GitHub Issues as primary progress tracking.",
+    "Require a morning next action for every story that reaches ready, blocked, or failed.",
+    "Prefer additive instrumentation and operator visibility before major workflow expansion.",
+    "Prefer disjoint file ownership per story so overnight lanes can run in parallel with minimal merge conflict."
+  ],
+  "qualityGates": [
+    "pytest tests/ -q"
+  ],
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "Define verified municipality demand signal",
+      "status": "completed",
+      "dependsOn": [],
+      "description": "Implement a first version of a verified resident demand signal that aggregates existing resident/formation events into a municipality-level metric the operator can inspect and reuse. This should live in the data/insights layer, not only in templates.",
+      "acceptanceCriteria": [
+        "There is a clear function or query path that produces municipality-level resident demand output from existing system data.",
+        "The output distinguishes demand-oriented evidence from pure public-data heuristics.",
+        "The implementation is covered by tests for at least one positive and one empty/low-signal case."
+      ]
+    },
+    {
+      "id": "US-002",
+      "title": "Expose municipality demand in /admin/strategy",
+      "status": "completed",
+      "dependsOn": [
+        "US-001"
+      ],
+      "description": "Update the operator/admin strategy surface so it shows verified demand context per municipality and makes it obvious which municipalities should be acted on next. Keep ownership primarily in the admin route/template path so this lane stays separate from outreach and ranking work.",
+      "acceptanceCriteria": [
+        "An admin/operator surface renders municipality demand values or summaries from the new demand signal.",
+        "The surface highlights actionable municipalities instead of showing only generic pipeline numbers.",
+        "Tests cover the rendering path or response contract for the demand-aware operator view."
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Incorporate verified demand into municipality targeting",
+      "status": "completed",
+      "dependsOn": [
+        "US-001"
+      ],
+      "description": "Extend municipality prioritization so verified demand can influence outreach targeting alongside existing energy-transition and value-gap heuristics. Keep ownership primarily in targeting/scoring code so this lane can run independently of admin and copy changes.",
+      "acceptanceCriteria": [
+        "Municipality targeting code can consume the verified demand signal.",
+        "Demand changes affect ranking or prioritization output in a documented way.",
+        "Tests cover at least one ranking scenario where higher demand changes municipality priority."
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Generate a municipality outreach pack from demand context",
+      "status": "completed",
+      "dependsOn": [
+        "US-001"
+      ],
+      "description": "Update outreach generation so municipality emails or operator-facing outreach artifacts include a concise demand-aware context block sourced from the municipality demand snapshot. Keep ownership primarily in `email_automation.py` and outreach templates so this lane can run in parallel with admin and ranking work.",
+      "acceptanceCriteria": [
+        "Outreach generation has access to municipality demand context.",
+        "The rendered outreach content includes demand-aware justification or summary.",
+        "Tests cover rendering/generation with and without available demand context."
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Add operator-facing next-action summaries from demand context",
+      "status": "open",
+      "dependsOn": [
+        "US-002",
+        "US-003"
+      ],
+      "description": "Add concise next-action summaries to operator-facing strategy output so the demand signal and targeting score resolve into a concrete recommendation per municipality. Keep this as a presentation/integration lane after admin demand rendering and targeting logic are both in place.",
+      "acceptanceCriteria": [
+        "At least one operator-facing surface or response includes a concrete next-action summary derived from demand plus targeting context.",
+        "The new output emphasizes municipality action instead of generic analytics.",
+        "Tests still pass after the response/template change."
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Align public and operator messaging to the municipality-demand sequence",
+      "status": "open",
+      "dependsOn": [
+        "US-004",
+        "US-005"
+      ],
+      "description": "Tighten high-leverage messaging surfaces so they reinforce the strategy sequence of public data -> resident demand capture -> municipality action, instead of diffusing attention across unrelated narratives. Keep this lane mostly in templates/copy so it can follow the functional changes.",
+      "acceptanceCriteria": [
+        "At least one public or operator-facing template is updated to reflect the municipality-demand sequence.",
+        "The new copy avoids over-emphasizing speculative strategy themes for this workflow.",
+        "Tests still pass after the copy/template change."
+      ]
+    }
+  ]
+}

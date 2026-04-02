@@ -1,0 +1,25 @@
+# Brief
+
+- Repo: `badenleg`
+- Problem: OpenLEG has strong public data and municipality traffic, but no single execution path that converts resident demand into a municipality-ready outreach asset and then into real LEG formation momentum.
+- User / operator: founder/operator running Badenleg/OpenLEG strategy and execution
+- Constraints:
+  - overnight runs stop at patch-ready or validated candidate
+  - no auto-apply overnight
+  - internal source of truth is Ralph + Monarch, not GitHub Issues
+  - obey `prd/feature-discipline.md`
+- Success:
+  - resident demand is measurable and queryable
+  - municipalities can be ranked by verified resident demand, not just public-energy heuristics
+  - outreach can be generated from a concrete municipality demand snapshot
+  - admin/operator surfaces show where demand exists and what next action should happen
+- Exact files likely touched:
+  - `app.py`
+  - `email_automation.py`
+  - `insights_engine.py`
+  - `scripts/lea_target_municipalities.py`
+  - templates for admin/public municipality surfaces
+- Expected tests:
+  - `pytest tests/ -q`
+- Morning deliverable:
+  - patch-ready or validated candidate stories for municipality demand capture and outreach-pack flow

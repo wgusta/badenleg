@@ -1,0 +1,12 @@
+MODE=minimal
+RULES_DEFAULT=auto
+SPAWN_MODE=auto
+VALIDATION_PROFILE=default
+NOTIFY_MODE=bell+inline
+NOTIFY_EVENTS=done,blocked,failed,ready
+SYNC_PROVIDER=opencode
+ASYNC_PROVIDER=codex-cloud
+CODEX_ENV_ID=openleg
+CODEX_ATTEMPTS=1
+CLOUD_CONTROLLER=github-actions
+CLOUD_BRIDGE=github
