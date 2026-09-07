@@ -183,6 +183,9 @@ def _report(document, result, quiet):
     if not quiet:
         for warning in document.get("warnings", []):
             print(f"  Warnung: {warning}")
+    flagged = len(document.get("veracity_flags", []))
+    if flagged:
+        print(f"  Veracity-Flags: {flagged}")
 
 
 def _compress(path, args, name):
@@ -291,6 +294,13 @@ def _import_file(path, args, index=None):
     ):
         print("  Fehler: Import nicht im Ledger vermerkt, Datei bleibt liegen")
         return "failed", None
+
+    # Veracity-Flags (#517): ein Flag sperrt nichts. Scheitert das Vermerken,
+    # bleibt der Import gültig; es fehlt dann nur die Sichtbarkeit.
+    if not db_mod.record_sdat_veracity_flags(
+        document["document_id"], document.get("veracity_flags", [])
+    ):
+        print("  Warnung: Veracity-Flags nicht vermerkt")
 
     if index is not None:
         index["document_ids"] = index["document_ids"] | {document["document_id"]}

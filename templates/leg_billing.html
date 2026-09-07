@@ -26,6 +26,9 @@
       <p class="text-sm text-ink-muted mb-4">
         {% if period.reconciled %}Abgleich mit dem VNB: vollständig abgeglichen.{% else %}Abgleich mit dem VNB: Abweichung prüfen.{% endif %}
         Quelldokumente: {{ period.source_count }}.
+        {% if period.veracity_flag_count %}
+          <span class="font-semibold text-accent-dark">Auffällige Messfenster: {{ period.veracity_flag_count }}</span> (Plausibilität, kein Fehler; Import und Freigabe bleiben möglich.)
+        {% endif %}
       </p>
       {% if period.approvable %}
       <form method="post" action="/leg/community/{{ community_id }}/billing/period/{{ period.id }}/approve">

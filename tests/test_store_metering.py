@@ -13,6 +13,7 @@ import sys
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 
@@ -1127,3 +1128,116 @@ def test_snapshot_propagates_a_failure_mid_transaction(monkeypatch, fail_at):
 
     with pytest.raises(RuntimeError, match="db down"):
         metering.get_billable_period_snapshot("COMM-1", SNAPSHOT_START, SNAPSHOT_END)
+
+
+# === Veracity flag ledger (#517) ===
+
+
+def test_record_sdat_veracity_flags_replaces_the_documents_flags(monkeypatch):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    flags = [
+        {
+            "kind": "flatline",
+            "metering_point_id": "CH1",
+            "direction": "consumption",
+            "window_start": MEASURED_AT,
+            "window_end": MEASURED_AT,
+            "detail": "32 Intervalle identisch.",
+        },
+        {
+            "kind": "magnitude_jump",
+            "metering_point_id": "CH2",
+            "direction": "production",
+            "window_start": MEASURED_AT,
+            "window_end": None,
+            "detail": "50 kWh gegen Median 0.5 kWh.",
+        },
+    ]
+
+    result = metering.record_sdat_veracity_flags("DOC-1", flags)
+
+    assert result is True
+    delete_query, delete_params = cur.executed[0]
+    assert "DELETE FROM sdat_veracity_flags" in delete_query
+    assert delete_params == ("DOC-1",)
+    for index, flag in enumerate(flags, start=1):
+        insert_query, insert_params = cur.executed[index]
+        assert "INSERT INTO sdat_veracity_flags" in insert_query
+        assert insert_params == (
+            "DOC-1",
+            flag["metering_point_id"],
+            flag["direction"],
+            flag["window_start"],
+            flag["window_end"],
+            flag["kind"],
+            flag["detail"],
+        )
+
+
+def test_record_sdat_veracity_flags_clears_stale_flags_without_new_ones(monkeypatch):
+    cur = _FakeCursor()
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert metering.record_sdat_veracity_flags("DOC-1", []) is True
+    assert len(cur.executed) == 1
+    assert "DELETE FROM sdat_veracity_flags" in cur.executed[0][0]
+
+
+def test_record_sdat_veracity_flags_swallows_errors(monkeypatch):
+    cur = _FakeCursor()
+    cur.execute = lambda *_: (_ for _ in ()).throw(RuntimeError("db down"))
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert metering.record_sdat_veracity_flags("DOC-1", []) is False
+
+
+def test_get_sdat_veracity_flags_reads_the_period_window(monkeypatch):
+    rows = [
+        {
+            "document_id": "DOC-1",
+            "kind": "flatline",
+            "metering_point_id": "CH1",
+            "direction": "consumption",
+            "window_start": MEASURED_AT,
+            "window_end": MEASURED_AT,
+            "detail": "x",
+        }
+    ]
+    cur = _FakeCursor(rows=rows)
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    flags = metering.get_sdat_veracity_flags(
+        MEASURED_AT, MEASURED_AT + timedelta(days=1)
+    )
+
+    assert flags == rows
+    query, params = cur.executed[0]
+    assert "FROM sdat_veracity_flags" in query
+    assert params == (MEASURED_AT, MEASURED_AT + timedelta(days=1))
+
+
+def test_get_sdat_veracity_flags_degrades_to_empty(monkeypatch):
+    cur = _FakeCursor()
+    cur.execute = lambda *_: (_ for _ in ()).throw(RuntimeError("db down"))
+    monkeypatch.setattr(database, "get_connection", _conn_ctx(cur))
+
+    assert metering.get_sdat_veracity_flags(MEASURED_AT, MEASURED_AT) == []
+
+
+def test_sdat_veracity_flags_table_exists_in_schema():
+    schema = (Path(__file__).resolve().parent.parent / "store" / "schema.py").read_text(
+        encoding="utf-8"
+    )
+    assert "CREATE TABLE IF NOT EXISTS sdat_veracity_flags" in schema
+    for column in (
+        "document_id",
+        "metering_point_id",
+        "direction",
+        "window_start",
+        "window_end",
+        "kind",
+        "detail",
+    ):
+        assert column in schema.split("sdat_veracity_flags", 1)[1][:800]

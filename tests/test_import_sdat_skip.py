@@ -74,6 +74,9 @@ class _FakeDb:
     def record_sdat_import(self, document):
         return True
 
+    def record_sdat_veracity_flags(self, document_id, flags):
+        return True
+
     def init_db(self):
         return True
 
@@ -345,3 +348,58 @@ def test_a_mixed_directory_only_works_on_what_is_new(
         "settled_plain.xml.gz",
         "unknown.xml",
     ]
+
+
+# ==== Veracity flag wiring (#517) ====
+
+
+class _VeracityDb(_FakeDb):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.veracity_calls = []
+
+    def record_sdat_veracity_flags(self, document_id, flags):
+        self.veracity_calls.append((document_id, flags))
+        return True
+
+
+def test_a_clean_delivery_records_no_flags(importer, tmp_path, monkeypatch):
+    fake = _VeracityDb()
+    monkeypatch.setattr(importer, "db", fake)
+    _staged(tmp_path)
+
+    exit_code = importer.main([str(tmp_path)])
+
+    assert exit_code == 0
+    assert fake.veracity_calls == [("TESTDOC-1", [])]
+
+
+def test_a_flagged_delivery_records_its_flags_and_still_imports(
+    importer, tmp_path, monkeypatch
+):
+    # 32+ identical nonzero intervals: the parser flags a flatline but the
+    # import must proceed and the ledger must carry the flag.
+    from tests.test_sdat_e66 import (
+        POINT_ONE,
+        TOTAL_ID,
+        _block,
+        _document,
+        _observation,
+    )
+
+    observations = "\n".join(_observation(i, "0.750") for i in range(1, 41))
+    (tmp_path / "flat.xml").write_text(
+        _document(_block(TOTAL_ID, observations)), encoding="utf-8"
+    )
+
+    fake = _VeracityDb()
+    monkeypatch.setattr(importer, "db", fake)
+
+    exit_code = importer.main([str(tmp_path)])
+
+    assert exit_code == 0, "a flagged delivery is still a successful import"
+    assert fake.saved == ["EDGE-1"]
+    document_id, flags = fake.veracity_calls[0]
+    assert document_id == "EDGE-1"
+    assert any(flag["kind"] == "flatline" for flag in flags)
+    assert any(flag["metering_point_id"] == POINT_ONE for flag in flags)

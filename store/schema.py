@@ -1275,4 +1275,25 @@ def create_tables():
                 "CREATE INDEX IF NOT EXISTS idx_sdat_imports_period ON sdat_imports(period_start)"
             )
 
+            # Veracity-Flags (#517): Markierungen zu importierten, aber
+            # unplausibel erscheinenden Fenstern. Ein Flag sperrt nichts und
+            # korrigiert nichts; es macht Befunde vor der Freigabe sichtbar.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS sdat_veracity_flags (
+                    id SERIAL PRIMARY KEY,
+                    document_id VARCHAR(64) NOT NULL,
+                    metering_point_id VARCHAR(64) NOT NULL,
+                    direction VARCHAR(16) NOT NULL,
+                    window_start TIMESTAMPTZ,
+                    window_end TIMESTAMPTZ,
+                    kind VARCHAR(32) NOT NULL,
+                    detail TEXT,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_sdat_veracity_flags_window "
+                "ON sdat_veracity_flags(window_start)"
+            )
+
             logger.info("[DB] Tables and indexes created successfully")
