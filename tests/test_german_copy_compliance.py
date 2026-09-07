@@ -46,9 +46,9 @@ ALLOWED_STEMS = {
 
 def _visible_text(template: str) -> str:
     text = re.sub(
-        r"<script\b.*?</script>", " ", template, flags=re.DOTALL | re.IGNORECASE
+        r"<script\b.*?</script\s*>", " ", template, flags=re.DOTALL | re.IGNORECASE
     )
-    text = re.sub(r"<style\b.*?</style>", " ", text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r"<style\b.*?</style\s*>", " ", text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r"<!--.*?-->", " ", text, flags=re.DOTALL)
     text = re.sub(r"<[^>]+>", " ", text)
     text = re.sub(r"\{\{.*?\}\}", " ", text, flags=re.DOTALL)
