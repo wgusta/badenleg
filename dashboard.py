@@ -3,6 +3,7 @@
 
 import math
 from datetime import date
+from decimal import Decimal, InvalidOperation
 from urllib.parse import quote, urlencode
 
 import billing_lifecycle
@@ -216,6 +217,23 @@ def _billing_workspace_period(period: dict) -> dict:
     }
 
 
+def _display_gross_chf(invoice: dict) -> tuple[str, bool]:
+    """Show the stored gross, or an explicit unreadable marker; never 0.00.
+
+    The operator approves and records payments against this list, so a row
+    whose totals are missing, null, or malformed is marked "Unlesbar" and
+    carries no invented amount. This mirrors the member display layer's
+    fail-closed honesty without failing the whole workspace closed.
+    """
+    try:
+        amount = Decimal(str(invoice.get("gross_chf")))
+    except (InvalidOperation, ValueError):
+        return "Unlesbar", True
+    if not amount.is_finite():
+        return "Unlesbar", True
+    return f"{amount:.2f}", False
+
+
 def leg_billing_workspace_view(community_id: str, building_id: str, **extra) -> dict:
     """Admin-gated view model for the billing approval workspace."""
     if not _require_confirmed_admin(community_id, building_id):
@@ -232,7 +250,10 @@ def leg_billing_workspace_view(community_id: str, building_id: str, **extra) -> 
     for event in community_events:
         events_by_invoice.setdefault(event["invoice_id"], []).append(event)
     for invoice in invoices:
-        invoice["display_gross_chf"] = f"{invoice.get('gross_chf', 0):.2f}"
+        (
+            invoice["display_gross_chf"],
+            invoice["gross_unreadable"],
+        ) = _display_gross_chf(invoice)
         policy_snapshot = invoice.get("policy_snapshot")
         delivery_method = (
             policy_snapshot.get("delivery_method")

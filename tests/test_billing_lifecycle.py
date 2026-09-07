@@ -582,6 +582,129 @@ def test_workspace_loads_complete_audit_history(monkeypatch):
     assert view["invoices"][0]["delivery_method_label"] == "E-Mail"
 
 
+def test_workspace_marks_unreadable_totals_instead_of_inventing_zero(monkeypatch):
+    from decimal import Decimal
+
+    import dashboard
+
+    _confirmed_admin(monkeypatch, dashboard)
+    rows = [
+        {
+            "id": 41,
+            "participant_id": "member-building",
+            "invoice_number": "LEG-2026-000001",
+            "gross_chf": Decimal("12.34"),
+            "lifecycle_state": "issued",
+            "policy_snapshot": {"delivery_method": "email"},
+        },
+        {
+            "id": 42,
+            "participant_id": "member-building",
+            "invoice_number": "LEG-2026-000002",
+            "lifecycle_state": "issued",
+            "policy_snapshot": {"delivery_method": "post"},
+        },
+        {
+            "id": 43,
+            "participant_id": "member-building",
+            "invoice_number": "LEG-2026-000003",
+            "gross_chf": None,
+            "lifecycle_state": "issued",
+            "policy_snapshot": {"delivery_method": "email"},
+        },
+        {
+            "id": 44,
+            "participant_id": "member-building",
+            "invoice_number": "LEG-2026-000004",
+            "gross_chf": "not-a-number",
+            "lifecycle_state": "issued",
+            "policy_snapshot": {"delivery_method": "email"},
+        },
+        {
+            "id": 45,
+            "participant_id": "member-building",
+            "invoice_number": "LEG-2026-000005",
+            "gross_chf": "NaN",
+            "lifecycle_state": "issued",
+            "policy_snapshot": {"delivery_method": "email"},
+        },
+    ]
+    monkeypatch.setattr(
+        dashboard.db, "list_community_billing_periods", MagicMock(return_value=[])
+    )
+    monkeypatch.setattr(
+        dashboard.db, "list_community_invoices", MagicMock(return_value=rows)
+    )
+    monkeypatch.setattr(
+        dashboard.db, "list_community_invoice_events", MagicMock(return_value=[])
+    )
+
+    view = dashboard.leg_billing_workspace_view(COMMUNITY, "admin-building")
+
+    displays = {
+        invoice["invoice_number"]: invoice["display_gross_chf"]
+        for invoice in view["invoices"]
+    }
+    flags = {
+        invoice["invoice_number"]: invoice["gross_unreadable"]
+        for invoice in view["invoices"]
+    }
+    assert displays["LEG-2026-000001"] == "12.34"
+    assert flags["LEG-2026-000001"] is False
+    for unreadable in (
+        "LEG-2026-000002",
+        "LEG-2026-000003",
+        "LEG-2026-000004",
+        "LEG-2026-000005",
+    ):
+        assert displays[unreadable] == "Unlesbar"
+        assert flags[unreadable] is True
+
+
+def test_workspace_marks_unreadable_totals_without_a_rendered_amount(
+    dashboard_app_module,  # noqa: F811
+    monkeypatch,
+):
+    invoice = {
+        "id": 42,
+        "participant_id": "member-building",
+        "invoice_number": "LEG-2026-000002",
+        "lifecycle_state": "issued",
+        "status_label": "Freigegeben",
+        "display_gross_chf": "Unlesbar",
+        "gross_unreadable": True,
+        "delivery_method_label": "E-Mail",
+        "events": [],
+        "correction_candidates": [],
+        "corrects_invoice_number": None,
+        "corrected_by_invoice_number": None,
+        "delivery_job_status": None,
+    }
+    monkeypatch.setattr(
+        dashboard_app_module.dashboard_module,
+        "leg_billing_workspace_view",
+        MagicMock(
+            return_value={
+                "error": None,
+                "community_id": COMMUNITY,
+                "periods": [],
+                "invoices": [invoice],
+                "billing_approved": False,
+                "approval_error": None,
+            }
+        ),
+    )
+    client = dashboard_app_module.web.test_client()
+    _set_session(client, building_id="admin-building")
+
+    response = client.get(f"/leg/community/{COMMUNITY}/billing")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Gesamtbetrag unlesbar" in html
+    assert "Unlesbar CHF" not in html
+
+
 class _LifecycleCursor:
     def __init__(self, *, ones=(), rows=()):
         self.ones = list(ones)
