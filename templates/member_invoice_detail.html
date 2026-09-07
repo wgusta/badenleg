@@ -9,7 +9,14 @@
 <style>
   @media print {
     .no-print { display: none !important; }
+    button { display: none !important; }
     body { background: #fff; }
+    a { color: inherit; text-decoration: none; }
+    thead { display: table-header-group; break-inside: avoid; }
+    tr { break-inside: avoid; }
+    dt, dd { break-inside: avoid; }
+    .invoice-totals { break-inside: avoid; }
+    article { break-inside: avoid-page; }
   }
   .invoice-table { border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; }
   .invoice-table th, .invoice-table td { border-bottom: 1px solid #ded7c6; padding: 0.5rem; text-align: left; }
