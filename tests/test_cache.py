@@ -68,3 +68,63 @@ class TestTenantCache:
 
             assert cache_get("key") is None
             cache_set("key", "val")  # should not raise
+
+
+# === Unavailability posture (#529) ===
+
+
+class TestCacheUnavailable:
+    """What happens when the cache service is down is a documented posture,
+    not an accident: reads degrade to None (backing store), writes no-op,
+    one bounded attempt per operation."""
+
+    def test_get_makes_exactly_one_attempt_and_degrades_to_none(self):
+        from cache import cache_get
+
+        client = MagicMock()
+        client.get.side_effect = ConnectionError("redis down")
+        with patch("cache._get_redis", return_value=client):
+            assert cache_get("some-key") is None
+            assert client.get.call_count == 1, (
+                "no retry loop may sit inside a cache read; a recovering "
+                "service must not be stampeded"
+            )
+
+    def test_set_delete_and_clear_swallow_errors_without_retry(self):
+        from cache import cache_clear_prefix, cache_delete, cache_set
+
+        set_client = MagicMock()
+        set_client.set.side_effect = ConnectionError("redis down")
+        delete_client = MagicMock()
+        delete_client.delete.side_effect = ConnectionError("redis down")
+        clear_client = MagicMock()
+        clear_client.keys.side_effect = ConnectionError("redis down")
+
+        with patch("cache._get_redis", return_value=set_client):
+            cache_set("k", {"v": 1})
+        with patch("cache._get_redis", return_value=delete_client):
+            cache_delete("k")
+        with patch("cache._get_redis", return_value=clear_client):
+            cache_clear_prefix("tenant")
+
+        assert set_client.set.call_count == 1
+        assert delete_client.delete.call_count == 1
+        assert clear_client.keys.call_count == 1
+
+    def test_client_uses_bounded_socket_timeouts(self):
+        """A cache outage must degrade fast, not hang request threads on an
+        OS-default TCP timeout."""
+        import cache
+
+        cache._redis_client = None
+        try:
+            with patch("redis.from_url") as from_url:
+                cache._get_redis()
+                kwargs = from_url.call_args.kwargs
+            assert (
+                kwargs["socket_connect_timeout"] == cache.CACHE_CONNECT_TIMEOUT_SECONDS
+            )
+            assert kwargs["socket_timeout"] == cache.CACHE_SOCKET_TIMEOUT_SECONDS
+            assert 0 < cache.CACHE_CONNECT_TIMEOUT_SECONDS <= 5
+        finally:
+            cache._redis_client = None

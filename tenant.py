@@ -79,8 +79,14 @@ def get_tenant_config(territory: str, db=None) -> dict:
     """Load tenant config: Redis -> DB -> defaults. Graceful fallback at each layer."""
     redis_key = f"tenant:{territory}"
 
-    # 1. Try Redis
-    cached = cache.cache_get(redis_key)
+    # 1. Try Redis. cache_get verlangt None im Fehlerfall, aber diese Naht
+    # darf einen Ausfall nie weiterreichen (#529): ohne eigene Absicherung
+    # würde ein unerwarteter Fehler die Anfrage statt nur den Cache killen.
+    try:
+        cached = cache.cache_get(redis_key)
+    except Exception as e:
+        logger.warning(f"[TENANT] Cache read failed for {territory}: {e}")
+        cached = None
     if cached and isinstance(cached, dict):
         return cached
 

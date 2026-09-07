@@ -1,8 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Redis-backed caching layer for OpenLEG.
 
-Falls back gracefully if Redis is unavailable (returns None, no-ops on writes).
-All keys prefixed with "openleg:" to avoid collisions.
+Unavailability posture (#529): reads return None, so every caller falls back
+to its backing store; writes and invalidations no-op; every operation makes
+exactly one bounded attempt, with connect and socket timeouts as named
+constants, so a recovering service is never stampeded and a down cache never
+hangs a request thread. All keys prefixed with "openleg:" to avoid collisions.
 """
 
 import json
@@ -15,6 +18,12 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")
 KEY_PREFIX = "openleg:"
 DEFAULT_TTL = 3600  # 1 hour
 
+# Eine nicht erreichbarer Cache darf Anfragen nie am TCP-Timeout des
+# Betriebssystems hängen lassen (#529): ein connect ohne Begrenzung blockiert
+# den Worker-Thread Sekunden statt auf den Backing Store zu degradieren.
+CACHE_CONNECT_TIMEOUT_SECONDS = 1
+CACHE_SOCKET_TIMEOUT_SECONDS = 1
+
 _redis_client = None
 
 
@@ -23,7 +32,12 @@ def _get_redis():
     if _redis_client is None:
         import redis
 
-        _redis_client = redis.from_url(REDIS_URL, decode_responses=False)
+        _redis_client = redis.from_url(
+            REDIS_URL,
+            decode_responses=False,
+            socket_connect_timeout=CACHE_CONNECT_TIMEOUT_SECONDS,
+            socket_timeout=CACHE_SOCKET_TIMEOUT_SECONDS,
+        )
     return _redis_client
 
 
