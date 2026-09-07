@@ -2,6 +2,7 @@
 """Tests for api_public.py: REST API endpoints."""
 
 import re
+from typing import ClassVar
 from unittest.mock import patch
 
 from tests.conftest import (
@@ -424,15 +425,19 @@ class TestPublicSitePvRankings:
 
 
 class TestLegToolkitEndpoints:
+    _GAP: ClassVar[dict] = {
+        "grid_fee_rp_kwh": 9.5,
+        "savings_rp_kwh": 3.8,
+        "annual_savings_chf": 171.0,
+        "monthly_savings_chf": 14.25,
+        "savings_pct": 13.8,
+        "grid_reduction_pct": 40.0,
+        "assumed_consumption_kwh": 4500,
+    }
+
     @patch("api_public.municipality_profile")
     def test_value_gap_post(self, mock_mp, client):
-        mock_mp.value_gap.return_value = {
-            "grid_fee_rp_kwh": 9.5,
-            "savings_rp_kwh": 3.8,
-            "annual_savings_chf": 171.0,
-            "monthly_savings_chf": 14.25,
-            "savings_pct": 13.8,
-        }
+        mock_mp.value_gap.return_value = dict(self._GAP)
         resp = client.post(
             "/api/v1/leg/value-gap",
             json={
@@ -453,10 +458,74 @@ class TestLegToolkitEndpoints:
             "grid_level",
             "num_participants",
             "avg_consumption_kwh",
+            "assumptions",
         }
         mock_mp.value_gap.assert_called_once_with(
             261, year=2026, grid_reduction_pct=40.0
         )
+
+    def test_value_gap_carries_the_calculations_own_basis(self, client):
+        """The response must name the basis the calculation used, unchanged
+        from the calculation's output (#520)."""
+        with patch("api_public.municipality_profile") as mock_mp:
+            mock_mp.value_gap.return_value = dict(self._GAP)
+            resp = client.post(
+                "/api/v1/leg/value-gap",
+                json={"bfs_number": 261},
+            )
+        data = resp.get_json()
+        assert data["assumptions"] == {
+            "grid_fee_rp_kwh": 9.5,
+            "grid_reduction_pct": 40.0,
+            "assumed_consumption_kwh": 4500,
+        }
+
+    def test_financial_model_carries_every_formation_assumption(self, client):
+        resp = client.post(
+            "/api/v1/leg/financial-model",
+            json={
+                "bfs_number": 261,
+                "scenario": {
+                    "community_size": 10,
+                    "pv_kwp": 30,
+                    "consumption_kwh": 4500,
+                },
+            },
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        for key in (
+            "grid_buy_price_rp",
+            "grid_sell_price_rp",
+            "leg_price_rp",
+            "community_size",
+            "solar_kwh_per_kwp",
+            "self_consumption_share_pct",
+        ):
+            assert key in data["assumptions"], (
+                f"the financial model must carry the assumption {key}"
+            )
+
+    def test_financial_model_surfaces_tenant_solar_yield_override(self, app, client):
+        from flask import g
+
+        @app.before_request
+        def _override_tenant():
+            g.tenant = {"solar_kwh_per_kwp": 875}
+
+        resp = client.post(
+            "/api/v1/leg/financial-model",
+            json={
+                "bfs_number": 261,
+                "scenario": {
+                    "community_size": 10,
+                    "pv_kwp": 30,
+                    "consumption_kwh": 4500,
+                },
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.get_json()["assumptions"]["solar_kwh_per_kwp"] == 875
 
     @patch("api_public.db")
     def test_value_gap_no_bfs(self, mock_db, client):
@@ -491,6 +560,7 @@ class TestLegToolkitEndpoints:
         assert len(data["projections"]) == 10
         assert data["projections"][0]["year"] == 1
         assert data["co2_reduction_kg_year"] > 0
+        assert data["assumptions"]["solar_kwh_per_kwp"] == 950
 
     def test_templates(self, client):
         resp = client.get("/api/v1/leg/templates")
