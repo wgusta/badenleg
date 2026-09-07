@@ -10,6 +10,7 @@ identical figures, because the PDF is rendered from the exact same
 detail_view() dict the HTML page used, not from a second calculation.
 """
 
+import re
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -1211,6 +1212,38 @@ def test_member_invoice_detail_template_supports_print_without_hiding_content():
     # Content itself (charges/credits/totals) must be server-rendered, so it
     # is present for print/PDF and screen readers even without JavaScript.
     assert "{% for item in invoice" in text or "{% for item in credit_items" in text
+
+
+def test_member_invoice_detail_print_hides_every_screen_only_control():
+    """The printed page must carry no interactive-only furniture (#522)."""
+    text = _read_template("member_invoice_detail.html")
+    print_block = text.split("@media print", 1)[1]
+    assert ".no-print { display: none" in print_block or ".no-print{" in (
+        print_block.replace(" ", "")
+    ), "the on-screen action bar must be hidden in print"
+    assert re.search(r"button\s*{[^}]*display:\s*none", print_block), (
+        "every button is on-screen-only on this page, so print must hide buttons "
+        "outright, not rely on each button carrying a class"
+    )
+    assert "attr(href)" not in print_block, (
+        "print must not inject raw link URLs into the page; browsers add "
+        "addresses as headers or footers on their own"
+    )
+
+
+def test_member_invoice_detail_print_keeps_line_items_and_totals_unbroken():
+    """Line items and the totals must not split across a page boundary (#522)."""
+    text = _read_template("member_invoice_detail.html")
+    print_block = text.split("@media print", 1)[1]
+    for selector in ("thead", "tr", "dt", "dd", ".invoice-totals"):
+        rule = re.search(
+            rf"(?:^|[,;{{}}\n])\s*{re.escape(selector)}\s*[,{{]",
+            print_block,
+        )
+        assert rule, f"{selector} must be addressed by a print rule"
+    assert "break-inside: avoid" in print_block or (
+        "page-break-inside: avoid" in print_block
+    ), "selectors above must carry page-break avoidance"
 
 
 def test_member_invoice_templates_keep_controls_keyboard_focusable():
