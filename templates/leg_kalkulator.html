@@ -271,6 +271,7 @@
         </p>
         <p>
           <strong>Annahmen:</strong> Der Rechner geht davon aus, dass der lokale Solarstrom zum gleichen Preis wie EVU-Strom verrechnet wird. 
+          Gebühren und Abgaben (KEV, Gemeindeabgaben) sind mit 2.5 Rp./kWh angesetzt.
           In der Praxis kann der LEG-Preis auch günstiger sein.
         </p>
         <p class="text-sm">
@@ -441,7 +442,7 @@
           // Typical Swiss averages (Rp/kWh)
           const energyPrice = tariff.energy_rp_kwh || 12.0;
           const gridPrice = tariff.grid_rp_kwh || 8.0;
-          const feesAndTaxes = 2.5; // KEV, communal fees, etc.
+          const FEES_AND_TAXES_RP_KWH = 2.5; // KEV, Gemeindeabgaben; benannt im Annahmen-Block
 
           // Local consumption
           const localKwh = consumption * (localPercent / 100);
@@ -450,14 +451,14 @@
           // Without LEG
           const energyWithout = consumption * energyPrice / 100;
           const gridWithout = consumption * gridPrice / 100;
-          const feesWithout = consumption * feesAndTaxes / 100;
+          const feesWithout = consumption * FEES_AND_TAXES_RP_KWH / 100;
           const totalWithout = energyWithout + gridWithout + feesWithout;
 
           // With LEG (reduced grid fees for local consumption)
           const gridReduction = parseFloat(document.getElementById('grid-reduction').value) / 100;
           const energyWith = consumption * energyPrice / 100; // Same energy price
           const gridWith = (gridKwh * gridPrice / 100) + (localKwh * gridPrice * (1 - gridReduction) / 100);
-          const feesWith = consumption * feesAndTaxes / 100; // Same fees
+          const feesWith = consumption * FEES_AND_TAXES_RP_KWH / 100; // Same fees
           const totalWith = energyWith + gridWith + feesWith;
 
           const annualSavings = totalWithout - totalWith;

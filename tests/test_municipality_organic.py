@@ -200,3 +200,26 @@ def test_verzeichnis_filters_by_query_and_projects_ranking(monkeypatch):
     assert "Winterthur" not in html
     assert "Rang 7 CH" in html
     assert "42%" in html
+
+
+def test_municipality_profile_states_its_assumed_consumption_from_the_calculation():
+    """The savings basis shown to Gemeinden must come from the calculation's
+    own output, not a hardcoded copy of it (#520)."""
+    text = (ROOT / "templates" / "gemeinde" / "profil.html").read_text(
+        encoding="utf-8"
+    )
+    assert "value_gap.assumed_consumption_kwh" in text
+    assumption_line = next(
+        line for line in text.splitlines() if "Annahme:" in line
+    )
+    assert "4'500" not in assumption_line and "4500" not in assumption_line
+
+
+def test_leg_kalkulator_names_its_fee_assumption():
+    """The landing calculator's fee constant must be visible where the
+    savings figure is read (#520)."""
+    text = (ROOT / "templates" / "leg_kalkulator.html").read_text(
+        encoding="utf-8"
+    )
+    assert "2.5 Rp./kWh" in text
+    assert "FEES_AND_TAXES_RP_KWH" in text
