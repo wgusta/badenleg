@@ -183,6 +183,7 @@ from store.document import (  # noqa: F401
 )
 from store.email_queue import (  # noqa: F401
     cancel_emails_for_building,
+    cleanup_finished_emails,
     get_email_stats,
     get_pending_emails,
     mark_email_failed,
