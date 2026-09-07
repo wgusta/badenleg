@@ -17,10 +17,19 @@ import public_data
 import ranking as ranking_module
 import registry_intake
 from cantons import SWISS_CANTONS
+from security_extensions import RATE_LIMIT_ANONYMOUS_READ, limiter
 
 logger = logging.getLogger(__name__)
 
 public_api_bp = Blueprint("public_api", __name__, url_prefix="/api/v1")
+
+# Oeffentliche API-Leseflaechen (#524): anonyme Browse-Klasse, grosszuegig
+# fuer Menschen und geteilte Frontends, eng genug fuer Missbrauchsmuster.
+limiter.limit(
+    RATE_LIMIT_ANONYMOUS_READ,
+    methods=["GET", "HEAD"],
+    override_defaults=False,
+)(public_api_bp)
 
 
 # === CORS ===
