@@ -831,7 +831,7 @@ def create_app(config=None, *, load_environment=True, check_database=True):
                 "https://cdn.jsdelivr.net",
                 "https://fonts.googleapis.com",
             ],
-            "img-src": ["'self'", "data:", "https:", "http:"],
+            "img-src": ["'self'", "data:", "https:"],
             "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
             "connect-src": [
                 "'self'",
