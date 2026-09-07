@@ -57,11 +57,12 @@
         <h2 class="font-bold">Mitglieder</h2>
       </div>
       <div class="overflow-x-auto"><table class="w-full table-fixed sm:table-auto text-sm">
+        <caption class="sr-only">Mitglieder dieser Stromgemeinschaft</caption>
         <thead class="bg-slate-50">
           <tr>
-            <th class="px-5 py-3 text-left">Adresse</th>
-            <th class="px-5 py-3 text-left">Rolle</th>
-            <th class="px-5 py-3 text-left">Status</th>
+            <th scope="col" class="px-5 py-3 text-left">Adresse</th>
+            <th scope="col" class="px-5 py-3 text-left">Rolle</th>
+            <th scope="col" class="px-5 py-3 text-left">Status</th>
           </tr>
         </thead>
         <tbody class="divide-y">
@@ -131,13 +132,14 @@
       <p class="text-sm text-ink-muted mb-4">Gemeinsames Journal aller ein- und ausgehenden Briefe und E-Mails, zum Beispiel mit dem Netzbetreiber. So sieht die ganze LEG, was gesendet wurde und was beantwortet ist.</p>
       {% if correspondence %}
       <div class="overflow-x-auto mb-4"><table class="w-full min-w-[42rem] text-sm">
+        <caption class="sr-only">Korrespondenzjournal dieser Stromgemeinschaft</caption>
         <thead class="bg-slate-50">
           <tr>
-            <th class="px-3 py-2 text-left">Richtung</th>
-            <th class="px-3 py-2 text-left">Kanal</th>
-            <th class="px-3 py-2 text-left">Gegenstelle</th>
-            <th class="px-3 py-2 text-left">Betreff</th>
-            <th class="px-3 py-2 text-right">Datum</th>
+            <th scope="col" class="px-3 py-2 text-left">Richtung</th>
+            <th scope="col" class="px-3 py-2 text-left">Kanal</th>
+            <th scope="col" class="px-3 py-2 text-left">Gegenstelle</th>
+            <th scope="col" class="px-3 py-2 text-left">Betreff</th>
+            <th scope="col" class="px-3 py-2 text-right">Datum</th>
           </tr>
         </thead>
         <tbody class="divide-y">
