@@ -381,6 +381,11 @@ def leg_value_gap():
             "grid_level": grid_level,
             "num_participants": num_participants,
             "avg_consumption_kwh": avg_consumption,
+            "assumptions": {
+                "grid_fee_rp_kwh": gap.get("grid_fee_rp_kwh"),
+                "grid_reduction_pct": gap.get("grid_reduction_pct"),
+                "assumed_consumption_kwh": gap.get("assumed_consumption_kwh"),
+            },
         }
     )
 
@@ -442,7 +447,13 @@ def leg_financial_model():
         consumption_kwh,
         pv_kwp,
         community_size,
-        solar_kwh_per_kwp=formation_wizard.DEFAULT_SOLAR_KWH_PER_KWP,
+        solar_kwh_per_kwp=(
+            g.tenant.get(
+                "solar_kwh_per_kwp", formation_wizard.DEFAULT_SOLAR_KWH_PER_KWP
+            )
+            if hasattr(g, "tenant")
+            else formation_wizard.DEFAULT_SOLAR_KWH_PER_KWP
+        ),
     )
 
     annual = base.get("annual_savings_chf", 0)
