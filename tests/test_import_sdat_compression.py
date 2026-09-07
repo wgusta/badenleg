@@ -72,6 +72,9 @@ class _FakeDb:
         self.recorded.append((document["document_id"], document.get("file_name")))
         return True
 
+    def record_sdat_veracity_flags(self, document_id, flags):
+        return True
+
     def init_db(self):
         return True
 

@@ -45,6 +45,17 @@ DIRECTION_PRODUCTION = "production"
 # Summe um bis zu 0.001 ab. 0.0015 lässt etwas Luft.
 E66_BALANCE_TOLERANCE_KWH = Decimal("0.0015")
 
+# Veracity flags (#517): heuristische, konservative Schwellen. Ein falscher
+# Alarm muss billig wegzudismissen sein, ein übersehenes Muster ist
+# akzeptabel. 32 identische ungleich-Null Intervalle sind acht Stunden
+# konstanter Last über Tag und Nacht hinweg: für einen Haushalt unrealistisch.
+E66_FLATLINE_INTERVALS = 32
+# Ein Sprung ist ein Vielfaches des Medians der ungleich-Null Werte derselben
+# Reihe, aber mindestens 20 kWh pro Intervall (80 kW Dauerlast): eine
+# Elektroauto-Ladung allein löst keinen Flag aus.
+E66_MAGNITUDE_JUMP_FACTOR = 20
+E66_MAGNITUDE_JUMP_MIN_KWH = Decimal(20)
+
 MAX_E66_BYTES = 64 * 1024 * 1024
 
 _RESOLUTION_UNIT_MINUTES = {"MIN": 1, "HOUR": 60}
@@ -275,6 +286,7 @@ def _parse_document(root):
         "point_ids": [],
         "rows": [],
         "warnings": [],
+        "veracity_flags": [],
     }
 
     groups, warnings, hard_error = _collect_groups(root, document)
@@ -288,6 +300,7 @@ def _parse_document(root):
     document["rows"] = _build_rows(groups, warnings)
     _warn_on_balance(document["rows"], warnings)
     _warn_on_interval_count(document, groups, warnings)
+    _flag_series_anomalies(document, document["rows"])
     return document, []
 
 
@@ -357,6 +370,31 @@ def _collect_groups(root, document):
                 f"Kanal {channel}: doppelte Sequenz {duplicate.sequence}."
             )
             return groups, warnings, detail
+        previous = group["channels"].get(channel)
+        if previous is not None:
+            # Zwei Blöcke beanspruchen dasselbe Fenster. Die Daten bleiben
+            # wie bisher (letzter Block gewinnt), aber ein Widerspruch wird
+            # sichtbar statt still verworfen (#517). Identische Wiederholung
+            # ist eine harmlose erneute Lieferung und bleibt unbeflaggt.
+            conflicts = sorted(
+                sequence
+                for sequence, value in channel_observations.items()
+                if sequence in previous and previous[sequence][0] != value[0]
+            )
+            if conflicts:
+                document.setdefault("veracity_flags", []).append(
+                    {
+                        "kind": "duplicate_window",
+                        "metering_point_id": point_id,
+                        "direction": direction,
+                        "window_start": interval_start,
+                        "window_end": None,
+                        "detail": (
+                            f"Kanal {channel}: zweiter Block widerspricht in "
+                            f"{len(conflicts)} Sequenzen."
+                        ),
+                    }
+                )
         group["channels"][channel] = channel_observations
 
     return groups, warnings, unit_error
@@ -429,6 +467,75 @@ def _warn_on_balance(rows, warnings):
         f"{len(deviations)} Intervalle mit Kanalsumme-Abweichung "
         f"(max. {worst} kWh): {examples}"
     )
+
+
+def _flag_series_anomalies(document, rows):
+    """Flatline und Grössenordnungs-Sprünge als Veracity-Flags vermerken.
+
+    Heuristisch und konservativ: ein Flag verwirft nichts und korrigiert
+    nichts, es macht ein unplausibel aussehendes Fenster nur sichtbar (#517).
+    """
+    series = {}
+    for row in rows:
+        series.setdefault((row["metering_point_id"], row["direction"]), []).append(row)
+
+    for (point_id, direction), series_rows in sorted(series.items()):
+        _flag_flatline(document, point_id, direction, series_rows)
+        _flag_magnitude_jumps(document, point_id, direction, series_rows)
+
+
+def _flag_flatline(document, point_id, direction, series_rows):
+    """Identische ungleich-Null Werte über die Schwellenzahl Intervalle."""
+    run_value, run_start, run_length = None, 0, 0
+    for index, row in enumerate(series_rows):
+        value = row["total_kwh"]
+        if value is not None and value == run_value and value != 0:
+            run_length += 1
+        else:
+            run_value, run_start, run_length = value, index, 1
+        if (
+            run_value is not None
+            and run_value != 0
+            and run_length == E66_FLATLINE_INTERVALS
+        ):
+            document.setdefault("veracity_flags", []).append(
+                {
+                    "kind": "flatline",
+                    "metering_point_id": point_id,
+                    "direction": direction,
+                    "window_start": series_rows[run_start]["measured_at"],
+                    "window_end": row["measured_at"],
+                    "detail": (
+                        f"{run_length} Intervalle mit identischem Wert {run_value} kWh."
+                    ),
+                }
+            )
+
+
+def _flag_magnitude_jumps(document, point_id, direction, series_rows):
+    """Ein Vielfaches des Reihenmedians, aber mindestens die Absolutschwelle."""
+    nonzero = sorted(
+        row["total_kwh"]
+        for row in series_rows
+        if row["total_kwh"] is not None and row["total_kwh"] != 0
+    )
+    if not nonzero:
+        return
+    median = nonzero[len(nonzero) // 2]
+    threshold = max(E66_MAGNITUDE_JUMP_MIN_KWH, E66_MAGNITUDE_JUMP_FACTOR * median)
+    for row in series_rows:
+        value = row["total_kwh"]
+        if value is not None and value > threshold:
+            document.setdefault("veracity_flags", []).append(
+                {
+                    "kind": "magnitude_jump",
+                    "metering_point_id": point_id,
+                    "direction": direction,
+                    "window_start": row["measured_at"],
+                    "window_end": None,
+                    "detail": f"{value} kWh gegen Median {median} kWh der Reihe.",
+                }
+            )
 
 
 def _warn_on_interval_count(document, groups, warnings):
