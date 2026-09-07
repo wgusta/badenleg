@@ -457,6 +457,17 @@ def refresh_municipality(
     if sd_row:
         profile["solar_installed_kwp"] = sd_row.get("potential_kwp")
     db.save_municipality_profile(profile)
+    # Ein erfolgreicher Refresh ist die Invalidierung des Profil-Caches
+    # (#527). Scheitert die Invalidierung, begrenzt die Rueckhalt-TTL die
+    # Staerke; sie darf den Refresh selbst nie fehlschlagen lassen.
+    try:
+        import municipality_profile
+
+        municipality_profile.invalidate_profile_cache(bfs_number)
+    except Exception as e:
+        logger.warning(
+            f"[PUBLIC] Profile cache invalidation failed for {bfs_number}: {e}"
+        )
     result["profile"] = profile
     result["value_gap"] = value_gap
 
