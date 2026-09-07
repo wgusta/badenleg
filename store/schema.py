@@ -223,6 +223,12 @@ def create_tables():
                 )
             """)
 
+            # Guarded migration: bounded retry bookkeeping for the queue (#519)
+            cur.execute("""
+                ALTER TABLE scheduled_emails
+                ADD COLUMN IF NOT EXISTS retry_count INTEGER DEFAULT 0
+            """)
+
             # Street leaderboard cache table
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS street_stats (
