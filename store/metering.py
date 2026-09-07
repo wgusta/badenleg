@@ -546,6 +546,69 @@ def get_sdat_import(document_id):
         return None
 
 
+def record_sdat_veracity_flags(document_id, flags):
+    """Veracity-Flags einer Lieferung ersetzen die bisherigen des Dokuments.
+
+    Ein erneuter Import derselben Datei schreibt die Flags neu, statt
+    Duplikate anzuhäufen. Fehler werden verschluckt: Flags dürfen den Import
+    nie blockieren.
+    """
+    try:
+        with _get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM sdat_veracity_flags WHERE document_id = %s",
+                    (document_id,),
+                )
+                for flag in flags:
+                    cur.execute(
+                        """
+                        INSERT INTO sdat_veracity_flags (
+                            document_id, metering_point_id, direction,
+                            window_start, window_end, kind, detail
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """,
+                        (
+                            document_id,
+                            flag.get("metering_point_id"),
+                            flag.get("direction"),
+                            flag.get("window_start"),
+                            flag.get("window_end"),
+                            flag.get("kind"),
+                            flag.get("detail"),
+                        ),
+                    )
+                return True
+    except Exception as e:
+        logger.error(f"[DB] Error recording SDAT veracity flags: {e}")
+        return False
+
+
+def get_sdat_veracity_flags(period_start, period_end):
+    """Flags, deren Fenster einen Abrechnungszeitraum berühren.
+
+    Bei einem Fehler kommt eine leere Menge zurück: ein fehlender Flag darf
+    die Freigabe-Ansicht nie sperren.
+    """
+    try:
+        with _get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                    SELECT document_id, metering_point_id, direction,
+                           window_start, window_end, kind, detail
+                    FROM sdat_veracity_flags
+                    WHERE COALESCE(window_end, window_start) >= %s
+                      AND window_start <= %s
+                    ORDER BY window_start, metering_point_id, direction, kind
+                """,
+                (period_start, period_end),
+            )
+            return [dict(row) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"[DB] Error getting SDAT veracity flags: {e}")
+        return []
+
+
 def get_sdat_import_index():
     """Das Ledger als Mengen laden: ein Query statt einer Abfrage pro Datei.
 

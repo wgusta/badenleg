@@ -200,7 +200,38 @@ _BILLING_STATUS_LABELS = {"draft": "Entwurf", "issued": "Freigegeben"}
 InvoiceLifecycleError = billing_lifecycle.InvoiceLifecycleError
 
 
-def _billing_workspace_period(period: dict) -> dict:
+def _veracity_flag_counts(periods) -> dict:
+    """Auffällige Messfenster pro Periode, gebündelt in einer Ledger-Lesung.
+
+    Ein Flag sperrt nichts: die Zahl macht Befunde sichtbar, die der
+    Operator vor der Freigabe sehen soll (#517).
+    """
+    if not periods:
+        return {}
+    starts = [
+        period.get("period_start") for period in periods if period.get("period_start")
+    ]
+    ends = [period.get("period_end") for period in periods if period.get("period_end")]
+    if not starts or not ends:
+        return {}
+    flags = db.get_sdat_veracity_flags(min(starts), max(ends))
+    counts: dict = {}
+    for flag in flags:
+        window_start = flag.get("window_start")
+        for period in periods:
+            period_start = period.get("period_start")
+            period_end = period.get("period_end")
+            if (
+                period_start
+                and period_end
+                and window_start
+                and period_start <= window_start <= period_end
+            ):
+                counts[period["id"]] = counts.get(period["id"], 0) + 1
+    return counts
+
+
+def _billing_workspace_period(period: dict, veracity_flag_count: int = 0) -> dict:
     """Compact display row for one billing period in the workspace."""
     status = str(period.get("status") or "")
     flags = billing_workspace.readiness_flags(period)
@@ -211,6 +242,7 @@ def _billing_workspace_period(period: dict) -> dict:
         "period_label": billing_workspace.period_label(period.get("period_start")),
         "reconciled": flags["reconciled"],
         "source_count": flags["source_count"],
+        "veracity_flag_count": veracity_flag_count,
         "approvable": (
             status == "draft" and flags["reconciled"] and flags["source_count"] > 0
         ),
@@ -239,6 +271,7 @@ def leg_billing_workspace_view(community_id: str, building_id: str, **extra) -> 
     if not _require_confirmed_admin(community_id, building_id):
         return {"error": "Kein Zugriff."}
     periods = db.list_community_billing_periods(community_id)
+    flag_counts = _veracity_flag_counts(periods)
     invoices = [
         billing_lifecycle.describe_invoice(invoice)
         for invoice in db.list_community_invoices(community_id)
@@ -294,7 +327,10 @@ def leg_billing_workspace_view(community_id: str, building_id: str, **extra) -> 
     view = {
         "error": None,
         "community_id": community_id,
-        "periods": [_billing_workspace_period(period) for period in periods],
+        "periods": [
+            _billing_workspace_period(period, flag_counts.get(period.get("id"), 0))
+            for period in periods
+        ],
         "invoices": invoices,
         "billing_approved": False,
         "approval_error": None,
