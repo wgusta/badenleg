@@ -6,6 +6,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from tests.test_dashboard_access_routes import (
+    app_module as dashboard_app_module,  # noqa: F401
+)
+
 
 @pytest.fixture
 def mock_redis():
@@ -106,3 +110,24 @@ class TestTenantInvalidation:
         mock_redis.keys.return_value = [b"openleg:tenant:a", b"openleg:tenant:b"]
         invalidate_cache(None)
         mock_redis.keys.assert_called_with("openleg:tenant:*")
+
+
+class TestAppDrivesWithCacheUnavailable:
+    """Driving the real app with a down cache must not error any request (#529)."""
+
+    def test_requests_still_serve_when_the_cache_is_down(
+        self,
+        monkeypatch,
+        dashboard_app_module,  # noqa: F811
+    ):
+        def raise_down(key):
+            raise ConnectionError("redis down")
+
+        monkeypatch.setattr("cache.cache_get", raise_down)
+        monkeypatch.setattr("cache.cache_set", lambda *a, **k: None)
+
+        client = dashboard_app_module.web.test_client()
+        response = client.get("/livez")
+
+        assert response.status_code == 200
+        assert response.get_data(as_text=True).strip() == "ok"
