@@ -128,6 +128,7 @@
               <label for="ref-link" class="sr-only">Einladungslink</label>
               <input type="text" readonly value="{{ referral_link }}" id="ref-link" class="w-full min-w-0 border border-line rounded-lg px-3 py-2 text-sm bg-paper" onclick="this.select()">
               <button type="button" id="copy-ref" class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-dark shrink-0">Kopieren</button>
+              <span id="copy-ref-status" role="status" class="sr-only"></span>
             </div>
             {% if user.referral_count is defined and user.referral_count > 0 %}
               <p class="text-sm text-ink-muted mt-3">{{ user.referral_count }} Nachbar(n) sind über Ihren Link beigetreten.</p>
@@ -258,6 +259,7 @@
 
   const copyBtn = document.getElementById('copy-ref');
   const refLink = document.getElementById('ref-link');
+  const copyStatus = document.getElementById('copy-ref-status');
   if (copyBtn && refLink) {
     copyBtn.addEventListener('click', async () => {
       try {
@@ -267,7 +269,8 @@
         document.execCommand('copy');
       }
       copyBtn.textContent = 'Kopiert';
-      setTimeout(() => { copyBtn.textContent = 'Kopieren'; }, 2000);
+      if (copyStatus) copyStatus.textContent = 'Einladungslink kopiert';
+      setTimeout(() => { copyBtn.textContent = 'Kopieren'; if (copyStatus) copyStatus.textContent = ''; }, 2000);
     });
   }
 
