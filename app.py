@@ -47,7 +47,7 @@ from municipality import municipality_bp, pilot_bp
 from neighbor_view import collect_building_locations, find_provisional_matches
 from rangliste import rangliste_bp
 from registration import CONSENT_VERSION, parse_consents  # noqa: F401
-from security_extensions import limiter
+from security_extensions import RATE_LIMIT_RETRY_AFTER_SECONDS, limiter
 from security_utils import log_security_event
 from self_host import self_host_bp
 from utility_portal import utility_bp
@@ -66,10 +66,12 @@ def handle_rate_limit(_error):
                 "error": (
                     "Zu viele Anfragen. Bitte warten Sie eine Minute und "
                     "versuchen Sie es erneut."
-                )
+                ),
+                "retry_after_seconds": RATE_LIMIT_RETRY_AFTER_SECONDS,
             }
         ),
         429,
+        {"Retry-After": str(RATE_LIMIT_RETRY_AFTER_SECONDS)},
     )
 
 
