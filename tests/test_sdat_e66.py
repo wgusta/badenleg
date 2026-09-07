@@ -464,3 +464,105 @@ E31_SAMPLE = """<?xml version="1.0" encoding="utf-8"?>
     </rsm:MeteringGridArea>
   </rsm:MeteringData>
 </rsm:AggregatedMeteredData_13>"""
+
+
+# ==== Veracity flags (#517) ====
+
+
+def test_clean_series_produces_no_veracity_flags():
+    document = _parsed()
+    assert document["veracity_flags"] == []
+
+
+def test_flatline_run_is_flagged_but_rows_still_import():
+    observations = "\n".join(_observation(i, "0.750") for i in range(1, 41))
+    document, errors = sdat_e66.parse_e66_xml(_document(_block(TOTAL_ID, observations)))
+
+    assert errors == []
+    assert len(document["rows"]) == 40, "a flag must not discard the data"
+    kinds = [flag["kind"] for flag in document["veracity_flags"]]
+    assert kinds == ["flatline"], kinds
+    flag = document["veracity_flags"][0]
+    assert flag["metering_point_id"] == POINT_ONE
+    assert flag["direction"] == "consumption"
+    assert flag["window_start"] < flag["window_end"]
+    assert flag["detail"]
+
+
+def test_short_constant_run_stays_unflagged():
+    observations = "\n".join(_observation(i, "0.750") for i in range(1, 11))
+    document, errors = sdat_e66.parse_e66_xml(_document(_block(TOTAL_ID, observations)))
+
+    assert errors == []
+    assert [
+        flag for flag in document["veracity_flags"] if flag["kind"] == "flatline"
+    ] == []
+
+
+def test_zero_runs_are_not_flatlines():
+    observations = "\n".join(_observation(i, "0.000") for i in range(1, 41))
+    document, errors = sdat_e66.parse_e66_xml(_document(_block(TOTAL_ID, observations)))
+
+    assert errors == []
+    assert document["veracity_flags"] == [], document["veracity_flags"]
+
+
+def test_duplicate_window_with_conflicting_values_is_flagged():
+    blocks = "\n".join(
+        [
+            _block(TOTAL_ID, _observation(1, "0.100")),
+            _block(TOTAL_ID, _observation(1, "0.900")),
+        ]
+    )
+    document, errors = sdat_e66.parse_e66_xml(_document(blocks))
+
+    assert errors == []
+    kinds = [flag["kind"] for flag in document["veracity_flags"]]
+    assert "duplicate_window" in kinds, document["veracity_flags"]
+
+
+def test_identical_duplicate_window_is_not_flagged():
+    blocks = "\n".join(
+        [
+            _block(TOTAL_ID, _observation(1, "0.100")),
+            _block(TOTAL_ID, _observation(1, "0.100")),
+        ]
+    )
+    document, errors = sdat_e66.parse_e66_xml(_document(blocks))
+
+    assert errors == []
+    assert document["veracity_flags"] == []
+
+
+def test_magnitude_jump_is_flagged_against_the_series_median():
+    volumes = [("0.500" if i % 2 else "0.400") for i in range(1, 41)]
+    volumes[10] = "50.000"
+    observations = "\n".join(
+        _observation(i, volume) for i, volume in enumerate(volumes, start=1)
+    )
+    document, errors = sdat_e66.parse_e66_xml(_document(_block(TOTAL_ID, observations)))
+
+    assert errors == []
+    jumps = [
+        flag for flag in document["veracity_flags"] if flag["kind"] == "magnitude_jump"
+    ]
+    assert len(jumps) == 1, document["veracity_flags"]
+    assert jumps[0]["detail"]
+
+
+def test_magnitude_below_the_threshold_stays_unflagged():
+    volumes = [("0.500" if i % 2 else "0.400") for i in range(1, 41)]
+    volumes[10] = "10.000"
+    observations = "\n".join(
+        _observation(i, volume) for i, volume in enumerate(volumes, start=1)
+    )
+    document, errors = sdat_e66.parse_e66_xml(_document(_block(TOTAL_ID, observations)))
+
+    assert errors == []
+    assert document["veracity_flags"] == []
+
+
+def test_detection_thresholds_are_named_constants():
+    assert sdat_e66.E66_FLATLINE_INTERVALS == 32
+    assert sdat_e66.E66_MAGNITUDE_JUMP_FACTOR == 20
+    assert sdat_e66.E66_MAGNITUDE_JUMP_MIN_KWH == Decimal(20)
