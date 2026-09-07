@@ -966,6 +966,20 @@ def create_tables():
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_buildings_city_id ON buildings(city_id)"
             )
+            # Consent-gated neighbourhood reads (#525): covering indexes for
+            # the two resident-visible shapes. The gate predicate itself is
+            # untouched; the measurement in
+            # docs/consent-gated-reads-measurement.json showed the count at
+            # stress scale dropping from ~25 ms to ~7.5 ms and the row set
+            # byte-identical, including the no-consent-row case.
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_buildings_city_verified_latlon "
+                "ON buildings (city_id, verified, lat, lon)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_consents_share "
+                "ON consents (building_id) WHERE share_with_neighbors = TRUE"
+            )
 
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_tokens_building ON tokens(building_id)"

@@ -11,6 +11,7 @@ and ``database`` re-exports the identical objects for legacy callers
 import subprocess
 import sys
 from contextlib import contextmanager
+from pathlib import Path
 
 import database
 from store import building
@@ -153,3 +154,21 @@ def test_a_broken_connection_never_leaks_the_exception(monkeypatch):
     assert building.delete_building("b1") is False
     assert building.update_building_verified("b1") is False
     assert building.get_building_for_dashboard("b1") is None
+
+
+def test_consent_gated_reads_carry_their_covering_indexes():
+    """The measured covering indexes (#525) exist; the gate predicate stays
+    byte-identical - an inner join on the live consent value."""
+    schema = (Path(__file__).resolve().parent.parent / "store" / "schema.py").read_text(
+        encoding="utf-8"
+    )
+    assert "idx_buildings_city_verified_latlon" in schema
+    assert "ON buildings (city_id, verified, lat, lon)" in schema
+    assert "idx_consents_share" in schema
+    assert "ON consents (building_id) WHERE share_with_neighbors = TRUE" in schema
+    source = (Path(__file__).resolve().parent.parent / "store" / "building.py").read_text(
+        encoding="utf-8"
+    )
+    assert source.count("c.share_with_neighbors = TRUE") >= 6, (
+        "the gate predicate must stay in every branch of every gated read"
+    )
