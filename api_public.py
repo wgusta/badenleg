@@ -448,7 +448,9 @@ def leg_financial_model():
         pv_kwp,
         community_size,
         solar_kwh_per_kwp=(
-            g.tenant.get("solar_kwh_per_kwp", formation_wizard.DEFAULT_SOLAR_KWH_PER_KWP)
+            g.tenant.get(
+                "solar_kwh_per_kwp", formation_wizard.DEFAULT_SOLAR_KWH_PER_KWP
+            )
             if hasattr(g, "tenant")
             else formation_wizard.DEFAULT_SOLAR_KWH_PER_KWP
         ),

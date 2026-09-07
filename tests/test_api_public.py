@@ -506,9 +506,7 @@ class TestLegToolkitEndpoints:
                 f"the financial model must carry the assumption {key}"
             )
 
-    def test_financial_model_surfaces_tenant_solar_yield_override(
-        self, app, client
-    ):
+    def test_financial_model_surfaces_tenant_solar_yield_override(self, app, client):
         from flask import g
 
         @app.before_request
@@ -528,7 +526,6 @@ class TestLegToolkitEndpoints:
         )
         assert resp.status_code == 200
         assert resp.get_json()["assumptions"]["solar_kwh_per_kwp"] == 875
-
 
     @patch("api_public.db")
     def test_value_gap_no_bfs(self, mock_db, client):
