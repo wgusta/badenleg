@@ -100,7 +100,7 @@
       <div><p class="text-sm">Modellierter Richtwert pro Haushalt</p><p class="font-mono tabular-nums text-lg text-ink">CHF {{ "%.0f"|format(value_gap.annual_savings_chf) }}/Jahr</p><a href="#data-provenance" data-source-marker="leg-savings" class="font-mono text-xs hover:text-brand">H4 Modellrechnung</a></div>
       <div><p class="text-sm">Modellierter Sparanteil</p><p class="font-mono tabular-nums text-lg text-ink">{{ "%.0f"|format(value_gap.savings_pct) }}%</p><a href="#data-provenance" data-source-marker="leg-share" class="font-mono text-xs hover:text-brand">H4 Modellrechnung</a></div>
     </div>
-    <p class="text-xs mt-4">Annahme: 4'500 kWh Jahresverbrauch und {{ "%.0f"|format(value_gap.grid_reduction_pct) }}% tiefere Netzgebühren auf NE7.</p>
+    <p class="text-xs mt-4">Annahme: {{ "{:,.0f}".format(value_gap.assumed_consumption_kwh)|replace(",", "'") }} kWh Jahresverbrauch und {{ "%.0f"|format(value_gap.grid_reduction_pct) }}% tiefere Netzgebühren auf NE7.</p>
   </section>
   {% endif %}
 
