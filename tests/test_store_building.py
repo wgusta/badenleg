@@ -166,9 +166,9 @@ def test_consent_gated_reads_carry_their_covering_indexes():
     assert "ON buildings (city_id, verified, lat, lon)" in schema
     assert "idx_consents_share" in schema
     assert "ON consents (building_id) WHERE share_with_neighbors = TRUE" in schema
-    source = (Path(__file__).resolve().parent.parent / "store" / "building.py").read_text(
-        encoding="utf-8"
-    )
+    source = (
+        Path(__file__).resolve().parent.parent / "store" / "building.py"
+    ).read_text(encoding="utf-8")
     assert source.count("c.share_with_neighbors = TRUE") >= 6, (
         "the gate predicate must stay in every branch of every gated read"
     )
