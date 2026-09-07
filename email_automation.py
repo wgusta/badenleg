@@ -85,6 +85,7 @@ def process_email_queue(app=None):
         app = current_app
 
     base_url = app.config["APP_BASE_URL"].rstrip("/")
+    db.cleanup_finished_emails()
     pending = db.get_pending_emails(limit=50)
     sent = 0
     failed = 0

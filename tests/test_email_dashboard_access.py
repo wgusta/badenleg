@@ -31,6 +31,9 @@ def _patch_queue(monkeypatch):
     monkeypatch.setattr(email_automation.db, "mark_email_sent", MagicMock())
     monkeypatch.setattr(email_automation.db, "mark_email_failed", MagicMock())
     monkeypatch.setattr(
+        email_automation.db, "cleanup_finished_emails", MagicMock(return_value=0)
+    )
+    monkeypatch.setattr(
         email_automation,
         "_get_tenant_for_building",
         lambda _building_id: {
